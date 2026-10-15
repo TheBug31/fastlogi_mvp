@@ -82,7 +82,7 @@ FastLogi es una plataforma SaaS multi-tenant diseñada para pequeños y medianos
   - Excepciones de dominio `InvalidOrderTransitionException`, `OfferNotAllowedException` y `BusinessSuspendedException`.
   - UI Livewire `Owner\Orders`: KPIs, filtros/búsqueda, tabla con acciones (ofrecer, cancelar, reasignar, incidencia, confirmar devolución) y modal de detalle con timeline; las rutas `owner.orders.index/create/show` reutilizan el componente.
   - Pruebas Pest en verde: 110 tests, 379 aserciones — incluye concurrencia con **dos conexiones MySQL independientes** (bloqueo de fila y rechazo de la segunda reserva de la última unidad).
-  - Commit: `PENDING`
+  - Commit: `84ffd31`
 - [ ] **Fase 6: Panel del Repartidor, Escaneos, GPS e Inactividad**
 - [ ] **Fase 7: Dashboard de Dueño, Notificaciones y Timeline**
 - [ ] **Fase 8: Reportes en PDF y Cierre**
