@@ -20,8 +20,11 @@ use App\Models\Package;
 use App\Models\PackageScan;
 use App\Models\Product;
 use App\Models\User;
+use App\Notifications\LowStockAlert;
+use App\Notifications\OfferRejectedOrExpired;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Str;
 
 class DatabaseSeeder extends Seeder
 {
@@ -529,5 +532,47 @@ class DatabaseSeeder extends Seeder
             'scanned_at' => now()->subMinutes(20),
         ]);
         OrderStatusLog::create(['order_id' => $order8->id, 'from' => OrderStatus::Assigned->value, 'to' => OrderStatus::InTransit->value, 'user_id' => $driverUser5->id, 'reason' => 'Zapatos recogidos en bodega']);
+
+        // 10. Notificaciones in-app de demostración (RF-002 / RF-008)
+        $owner1->notifications()->create([
+            'id' => (string) Str::uuid(),
+            'type' => LowStockAlert::class,
+            'data' => [
+                'type' => LowStockAlert::LOW_STOCK,
+                'product_id' => $p4->id,
+                'product_name' => $p4->name,
+                'stock' => $p4->stock,
+                'min_stock' => $p4->min_stock,
+                'message' => "El producto «{$p4->name}» bajó del stock mínimo ({$p4->stock} de {$p4->min_stock}).",
+            ],
+            'read_at' => null,
+        ]);
+
+        $owner1->notifications()->create([
+            'id' => (string) Str::uuid(),
+            'type' => LowStockAlert::class,
+            'data' => [
+                'type' => LowStockAlert::OUT_OF_STOCK,
+                'product_id' => $p5->id,
+                'product_name' => $p5->name,
+                'stock' => $p5->stock,
+                'min_stock' => $p5->min_stock,
+                'message' => "El producto «{$p5->name}» se quedó sin existencias.",
+            ],
+            'read_at' => null,
+        ]);
+
+        $owner1->notifications()->create([
+            'id' => (string) Str::uuid(),
+            'type' => OfferRejectedOrExpired::class,
+            'data' => [
+                'type' => 'offer_rejected_or_expired',
+                'order_id' => $order6->id,
+                'customer_name' => $order6->customer_name,
+                'reason' => 'Oferta expirada',
+                'message' => "El pedido de {$order6->customer_name} volvió a pendiente (Oferta expirada). Asígnalo a otro repartidor.",
+            ],
+            'read_at' => null,
+        ]);
     }
 }

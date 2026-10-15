@@ -31,6 +31,7 @@ Route::prefix('negocio')
     ->middleware(['auth', 'role:owner'])
     ->group(function () {
         Route::view('/', 'owner.dashboard')->name('dashboard');
+        Route::view('/notificaciones', 'owner.notifications')->name('notifications.index');
         Route::view('/pedidos', 'owner.orders.index')->name('orders.index');
         Route::view('/pedidos/nuevo', 'owner.orders.create')->name('orders.create');
         Route::view('/pedidos/{order?}', 'owner.orders.show')->name('orders.show');

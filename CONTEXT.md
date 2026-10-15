@@ -92,7 +92,16 @@ FastLogi es una plataforma SaaS multi-tenant diseñada para pequeños y medianos
   - Nota de alcance: RF-011 menciona un endpoint con token Sanctum; en el MVP se usa una ruta web autenticada por sesión (mismo panel web del repartidor) para no introducir emisión de tokens fuera de alcance.
   - Pruebas Pest en verde: 137 tests, 443 aserciones (`PackageScanServiceTest`, `DriverTelemetryServiceTest`, `DriverTelemetryEndpointTest`, `Livewire/DriverPanelTest`).
   - Commit: `d78766c`
-- [ ] **Fase 7: Dashboard de Dueño, Notificaciones y Timeline**
+- [x] **Fase 7: Dashboard de Dueño, Notificaciones y Timeline**
+  - `DriverManagementService`: alta atómica de repartidor (usuario rol `driver` + perfil en una sola transacción), edición de perfil, ajuste del límite `max_active_orders` (rango 1..8) y conmutación manual `offline`/`available` recalculando `busy` según la carga real (RF-005, CU07).
+  - `Support\NotificationPresenter`: centraliza icono, color y enlace profundo de las notificaciones in-app (`order_id` → detalle del pedido, `product_id` → inventario, `driver_id` → flota).
+  - Centro de notificaciones persistente (RF-002 §4.2.1, RF-008): campana en el encabezado del panel (`Owner\NotificationBell`) con contador de no leídas y dropdown de recientes, más la página `Owner\Notifications` (`owner.notifications.index`) con filtros todas / no leídas / leídas, marcar leída y no leída, marcar todas como leídas y eliminar. Ambos consultan mediante polling cada 10 s.
+  - Dashboard del dueño `Owner\Dashboard` (RF-006): KPIs del día (ventas, pedidos, entregados, flota disponible), alerta de stock bajo, pedidos en curso con su repartidor, panel de flota con capacidad y última señal, y timeline de actividad reciente alimentado por `order_status_logs`; refresco cada 15 s.
+  - Gestión de flota `Owner\Drivers` (`owner.drivers.index`): KPIs por disponibilidad, búsqueda y filtro por estado, alta y edición de repartidores y conmutación de disponibilidad. La ruta `owner.notifications.index` se añade al panel.
+  - Nota de alcance: el timeline de escaneos por pedido (RF-006) ya vivía en el modal de detalle de `Owner\Orders`; en F7 se complementa con el feed de actividad a nivel de negocio y se mantiene el polling de 10 s como mecanismo de notificación (sin push/WebSocket).
+  - `DatabaseSeeder`: 3 notificaciones in-app de demostración para el dueño principal (stock bajo, agotado y oferta expirada).
+  - Pruebas Pest en verde: 162 tests, 523 aserciones (`DriverManagementServiceTest`, `Livewire/OwnerDashboardTest`, `Livewire/NotificationCenterTest`, `Livewire/OwnerDriversTest`).
+  - Commit: `PENDING`
 - [ ] **Fase 8: Reportes en PDF y Cierre**
 
 ---
