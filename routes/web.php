@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\Auth\LoginController;
 use App\Http\Controllers\Driver\DriverTelemetryController;
+use App\Http\Controllers\Owner\ReportController;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/', function () {
@@ -37,6 +38,9 @@ Route::prefix('negocio')
         Route::view('/pedidos/{order?}', 'owner.orders.show')->name('orders.show');
         Route::view('/inventario', 'owner.inventory')->name('inventory.index');
         Route::view('/repartidores', 'owner.drivers')->name('drivers.index');
+        Route::view('/reportes', 'owner.reports')->name('reports.index');
+        Route::get('/reportes/pedidos/pdf', [ReportController::class, 'orders'])->name('reports.orders');
+        Route::get('/reportes/repartidores/pdf', [ReportController::class, 'drivers'])->name('reports.drivers');
     });
 
 // ── Repartidor (móvil) ──────────────────────────────────────

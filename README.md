@@ -1,66 +1,164 @@
-<p align="center"><a href="https://laravel.com" target="_blank"><img src="https://raw.githubusercontent.com/laravel/art/master/logo-lockup/5%20SVG/2%20CMYK/1%20Full%20Color/laravel-logolockup-cmyk-red.svg" width="400" alt="Laravel Logo"></a></p>
+# FastLogi — MVP
 
-<p align="center">
-<a href="https://github.com/laravel/framework/actions"><img src="https://github.com/laravel/framework/workflows/tests/badge.svg" alt="Build Status"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/dt/laravel/framework" alt="Total Downloads"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/v/laravel/framework" alt="Latest Stable Version"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/l/laravel/framework" alt="License"></a>
-</p>
+MVP de **FastLogi**, una plataforma SaaS multi-tenant para la gestión de pedidos, inventario y
+domicilios de pequeños negocios colombianos. Cada negocio (tenant) opera aislado del resto, con
+roles de **SuperAdmin**, **Dueño de negocio** y **Repartidor**.
 
-## About Laravel
+Documentación funcional de referencia: [`doc/SRS_FastLogi_v1_2.md`](doc/SRS_FastLogi_v1_2.md).
+Bitácora de implementación por fases: [`CONTEXT.md`](CONTEXT.md).
 
-Laravel is a web application framework with expressive, elegant syntax. We believe development must be an enjoyable and creative experience to be truly fulfilling. Laravel takes the pain out of development by easing common tasks used in many web projects, such as:
+## Stack
 
-- [Simple, fast routing engine](https://laravel.com/docs/routing).
-- [Powerful dependency injection container](https://laravel.com/docs/container).
-- Multiple back-ends for [session](https://laravel.com/docs/session) and [cache](https://laravel.com/docs/cache) storage.
-- Expressive, intuitive [database ORM](https://laravel.com/docs/eloquent).
-- Database agnostic [schema migrations](https://laravel.com/docs/migrations).
-- [Robust background job processing](https://laravel.com/docs/queues).
-- [Real-time event broadcasting](https://laravel.com/docs/broadcasting).
+| Capa | Tecnología |
+| --- | --- |
+| Lenguaje | PHP 8.4 |
+| Framework | Laravel 12 |
+| UI reactiva | Livewire v3 |
+| Estilos | Tailwind CSS 4 + Vite |
+| Base de datos | MySQL 8 (utf8mb4) |
+| Colas / scheduler | Driver `database` (`QUEUE_CONNECTION=database`) |
+| PDF | barryvdh/laravel-dompdf |
+| Pruebas | Pest |
 
-Laravel is accessible, powerful, and provides tools required for large, robust applications.
+> **Nota de diseño:** el SRS menciona Bootstrap 5 / AdminLTE para la interfaz, pero el diseño de
+> referencia (Stitch) es Tailwind; se priorizó Tailwind para reutilizar las vistas entregadas.
+> Igualmente, RF-011 describe un endpoint con token Sanctum, pero en el MVP la telemetría usa la
+> sesión web ya autenticada del repartidor (`POST /repartidor/telemetria`), para no introducir
+> emisión de tokens fuera de alcance.
 
-## Learning Laravel
+## Requisitos
 
-Laravel has the most extensive and thorough [documentation](https://laravel.com/docs) and video tutorial library of all modern web application frameworks, making it a breeze to get started with the framework.
+- PHP 8.4 con las extensiones habituales de Laravel (incl. `pdo_mysql`, `mbstring`, `gd` para dompdf).
+- Composer 2.
+- Node.js 20+ y npm.
+- MySQL 8 en ejecución.
 
-You may also try the [Laravel Bootcamp](https://bootcamp.laravel.com), where you will be guided through building a modern Laravel application from scratch.
+## Instalación
 
-If you don't feel like reading, [Laracasts](https://laracasts.com) can help. Laracasts contains thousands of video tutorials on a range of topics including Laravel, modern PHP, unit testing, and JavaScript. Boost your skills by digging into our comprehensive video library.
+```bash
+# 1. Dependencias PHP y JS
+composer install
+npm install
 
-## Laravel Sponsors
+# 2. Configuración del entorno
+cp .env.example .env       # (en Windows: copy .env.example .env)
+php artisan key:generate
 
-We would like to extend our thanks to the following sponsors for funding Laravel development. If you are interested in becoming a sponsor, please visit the [Laravel Partners program](https://partners.laravel.com).
+# 3. Crear las bases de datos (dev + test)
+#    mysql -u root -e "CREATE DATABASE fastlogi CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;"
+#    mysql -u root -e "CREATE DATABASE fastlogi_test CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;"
+#    Ajusta DB_USERNAME / DB_PASSWORD en .env si es necesario.
 
-### Premium Partners
+# 4. Migrar y sembrar datos de demostración
+php artisan migrate:fresh --seed
 
-- **[Vehikl](https://vehikl.com/)**
-- **[Tighten Co.](https://tighten.co)**
-- **[WebReinvent](https://webreinvent.com/)**
-- **[Kirschbaum Development Group](https://kirschbaumdevelopment.com)**
-- **[64 Robots](https://64robots.com)**
-- **[Curotec](https://www.curotec.com/services/technologies/laravel/)**
-- **[Cyber-Duck](https://cyber-duck.co.uk)**
-- **[DevSquad](https://devsquad.com/hire-laravel-developers)**
-- **[Jump24](https://jump24.co.uk)**
-- **[Redberry](https://redberry.international/laravel/)**
-- **[Active Logic](https://activelogic.com)**
-- **[byte5](https://byte5.de)**
-- **[OP.GG](https://op.gg)**
+# 5. Compilar los assets
+npm run build              # producción
+# o, para desarrollo:
+npm run dev
+```
 
-## Contributing
+### Variables de entorno relevantes
 
-Thank you for considering contributing to the Laravel framework! The contribution guide can be found in the [Laravel documentation](https://laravel.com/docs/contributions).
+```dotenv
+APP_URL=http://localhost:8000
 
-## Code of Conduct
+DB_CONNECTION=mysql
+DB_HOST=127.0.0.1
+DB_PORT=3306
+DB_DATABASE=fastlogi
+DB_USERNAME=root
+DB_PASSWORD=
 
-In order to ensure that the Laravel community is welcoming to all, please review and abide by the [Code of Conduct](https://laravel.com/docs/contributions#code-of-conduct).
+QUEUE_CONNECTION=database   # requerido para ofertas, inactividad y correos
+MAIL_MAILER=log             # los correos de alertas se escriben en storage/logs
+```
 
-## Security Vulnerabilities
+## Ejecución
 
-If you discover a security vulnerability within Laravel, please send an e-mail to Taylor Otwell via [taylor@laravel.com](mailto:taylor@laravel.com). All security vulnerabilities will be promptly addressed.
+La aplicación necesita **tres procesos** en entornos locales:
 
-## License
+```bash
+php artisan serve            # 1. servidor web
+php artisan queue:work       # 2. worker de colas (expiración de ofertas, correos, cierres)
+php artisan schedule:work    # 3. scheduler (barridos de respaldo cada minuto)
+```
 
-The Laravel framework is open-sourced software licensed under the [MIT license](https://opensource.org/licenses/MIT).
+O bien un único comando (servidor + cola + logs + Vite):
+
+```bash
+composer run dev
+```
+
+> El worker de colas y el scheduler son **obligatorios** para el comportamiento completo:
+> expiración de ofertas a los 90 s (RF-002), detección de repartidores inactivos (RF-011),
+> cierre de ventanas de gracia de negocios suspendidos (RF-003) y envío de correos de stock (RF-008).
+
+Tareas programadas registradas (`php artisan schedule:list`):
+
+| Tarea | Frecuencia | Propósito |
+| --- | --- | --- |
+| `close-expired-grace-windows` | cada minuto | Cierra pedidos en gracia vencidos (24 h) |
+| `expire-order-offers` | cada minuto | Respaldo de ofertas vencidas (90 s) |
+| `detect-inactive-drivers` | cada minuto | Marca repartidores inactivos y notifica al dueño |
+
+## Credenciales de demostración
+
+Sembradas por `php artisan migrate:fresh --seed`:
+
+| Rol | Usuario | Contraseña | Panel |
+| --- | --- | --- | --- |
+| SuperAdmin | `super@fastlogi.test` | `superadmin` | `/superadmin` |
+| Dueño (Restaurante El Leñador) | `owner@fastlogi.test` | `password123` | `/negocio` |
+| Dueño (Calzado San Victorino) | `calzado@fastlogi.test` | `password123` | `/negocio` |
+| Repartidores | `driver1@fastlogi.test` … `driver6@fastlogi.test` | `driverpass` | `/repartidor/rutas` |
+
+El login acepta **correo o teléfono**. Ejemplos de teléfono de repartidor: `3101112233` (driver1).
+
+## Pruebas
+
+Las pruebas usan una base de datos **MySQL independiente** (`fastlogi_test`, ver `phpunit.xml`) y no
+SQLite en memoria; un par de pruebas de concurrencia abren **dos conexiones MySQL reales**.
+
+```bash
+php artisan test
+# Equivalente: vendor/bin/pest
+```
+
+Cobertura actual: **169 tests, 548 aserciones** (auth/roles, multi-tenant, inventario, pedidos y
+máquina de estados, concurrencia, escaneos, telemetría, dashboard, notificaciones, gestión de flota
+y reportes PDF).
+
+Formateo de código (solo archivos tocados):
+
+```bash
+vendor/bin/pint app/Services/NombreServicio.php ...
+```
+
+## Estructura funcional (mapa RF → archivos)
+
+| RF | Descripción | Archivos principales |
+| --- | --- | --- |
+| RF-001 | Creación de pedidos y reserva de stock | `app/Services/OrderService.php`, `app/Services/InventoryService.php`, `app/Livewire/Owner/Orders.php` |
+| RF-002 | Oferta de pedido y aceptación del repartidor | `app/Services/OrderService.php`, `app/Jobs/ExpireOrderOffer.php`, `app/Notifications/OrderOffered.php`, `app/Notifications/OfferRejectedOrExpired.php`, `app/Livewire/Driver/Routes.php` |
+| RF-003 | Suspensión y reactivación de negocios | `app/Services/BusinessSuspensionService.php`, `app/Jobs/CloseGraceOrders.php`, `app/Livewire/Superadmin/Dashboard.php` |
+| RF-004 | Creación de negocios por el SuperAdmin | `app/Services/BusinessService.php`, `app/Livewire/Superadmin/Dashboard.php` |
+| RF-005 | Disponibilidad y capacidad de repartidores | `app/Services/DriverAvailabilityService.php`, `app/Services/DriverManagementService.php`, `app/Livewire/Owner/Drivers.php` |
+| RF-006 | Trazabilidad de paquetes (timeline) | `app/Services/PackageScanService.php`, `app/Livewire/Driver/OrderDetail.php`, `app/Livewire/Owner/Orders.php`, `app/Livewire/Owner/Dashboard.php` |
+| RF-007 | Aislamiento multi-tenant | `app/Models/Traits/BelongsToBusiness.php`, `app/Models/Scopes/BusinessScope.php` |
+| RF-008 | Inventario y alertas persistentes de stock | `app/Services/InventoryService.php`, `app/Notifications/LowStockAlert.php`, `app/Livewire/Owner/Inventory.php` |
+| RF-009 | Reportes en PDF | `app/Services/ReportService.php`, `app/Http/Controllers/Owner/ReportController.php`, `resources/views/reports/*`, `app/Livewire/Owner/Reports.php` |
+| RF-010 | Autenticación y roles | `app/Http/Controllers/Auth/LoginController.php`, `app/Http/Middleware/RoleMiddleware.php` |
+| RF-011 | Ubicación GPS e inactividad del repartidor | `app/Services/DriverTelemetryService.php`, `app/Jobs/DetectInactiveDrivers.php`, `app/Http/Controllers/Driver/DriverTelemetryController.php` |
+| Centro de notificaciones | Campana + centro persistente | `app/Livewire/Owner/NotificationBell.php`, `app/Livewire/Owner/Notifications.php`, `app/Support/NotificationPresenter.php` |
+| Dashboard del dueño | KPIs, flota y timeline | `app/Livewire/Owner/Dashboard.php` |
+
+## Alcance
+
+**Incluido:** gestión de negocios (SuperAdmin), inventario con alertas multicanal, pedidos con
+máquina de estados y concurrencia pesimista, ofertas con expiración, panel del repartidor con
+escaneos, telemetría GPS e inactividad, trazabilidad, centro de notificaciones in-app, gestión de
+flota y reportes en PDF.
+
+**Fuera de alcance (por decisión del MVP):** variantes de producto, mapas en vivo, notificaciones
+push/WebSocket, facturación, aplicación nativa/PWA.

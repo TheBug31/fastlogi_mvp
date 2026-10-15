@@ -102,7 +102,25 @@ FastLogi es una plataforma SaaS multi-tenant diseñada para pequeños y medianos
   - `DatabaseSeeder`: 3 notificaciones in-app de demostración para el dueño principal (stock bajo, agotado y oferta expirada).
   - Pruebas Pest en verde: 162 tests, 523 aserciones (`DriverManagementServiceTest`, `Livewire/OwnerDashboardTest`, `Livewire/NotificationCenterTest`, `Livewire/OwnerDriversTest`).
   - Commit: `96ff606`
-- [ ] **Fase 8: Reportes en PDF y Cierre**
+- [x] **Fase 8: Reportes en PDF y Cierre**
+  - `ReportService` (RF-009): construye el conjunto de datos de los reportes de pedidos (rango de fechas, estado, repartidor y método de pago) y de repartidores (entregas y montos dentro del periodo). Todas las consultas pasan por los modelos con `BusinessScope`, por lo que un reporte nunca filtra datos de otro tenant (RF-007).
+  - `Owner\ReportController` (RF-009): endpoints `GET /negocio/reportes/pedidos/pdf` (`owner.reports.orders`) y `GET /negocio/reportes/repartidores/pdf` (`owner.reports.drivers`), que validan los filtros (rango de fechas coherente, `estado` en el enum o `todos`) y generan el PDF con **dompdf** (`Pdf::loadView(...)`).
+  - Vistas PDF `resources/views/reports/orders.blade.php` y `reports/drivers.blade.php`: encabezado con negocio/periodo/estado/pago y fecha de generación, tabla de datos y pie con totales (fuente DejaVu Sans para acentos).
+  - Página `Owner\Reports` (`owner.reports.index`, enlazada desde el menú): filtros en vivo, KPIs del periodo (pedidos, valor total, repartidores), vista previa de los primeros 10 pedidos y botones de descarga de ambos PDF. Se activa la ruta `owner.reports.*` que antes aparecía deshabilitada en el layout.
+  - Cierre: `README.md` reescrito con descripción, stack, requisitos, instalación paso a paso, ejecución (servidor + `queue:work` + `schedule:work`), tareas programadas, credenciales de demostración, pruebas y mapa RF → archivos, además de las desviaciones de alcance (Tailwind en lugar de Bootstrap; telemetría por sesión web en lugar de token Sanctum).
+  - Pruebas Pest en verde: **169 tests, 548 aserciones** (`ReportsPdfTest` añade 7 pruebas: aislamiento por negocio, filtros de estado/fecha, agregados de repartidores, descarga real de ambos PDF, rango inválido rechazado y control de acceso por rol).
+  - Commit: `PENDING`
+
+---
+
+## 5. Fuera de Alcance (Decisiones del MVP)
+
+- Variantes de producto y catálogos jerárquicos.
+- Mapa en vivo / seguimiento en tiempo real (solo telemetría GPS persistida y última posición).
+- Notificaciones push y WebSockets: se sustituyen por notificaciones in-app persistentes con *polling* (10 s) y correo (RF-002 §4.2.1).
+- Facturación / cobros en línea y pasarelas de pago.
+- Aplicación nativa o PWA (solo web responsive).
+- Emisión y gestión de tokens API (Sanctum); los endpoints operativos usan la sesión web autenticada.
 
 ---
 
