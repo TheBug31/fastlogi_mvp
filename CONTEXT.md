@@ -55,7 +55,7 @@ FastLogi es una plataforma SaaS multi-tenant diseñada para pequeños y medianos
   - Cuentas suspendidas/inactivas y negocios suspendidos se rechazan con flash `suspended` (RF-010, RF-003).
   - Reglas consolidadas en `User::canLogin()` (sin duplicación en el controlador).
   - Pruebas Pest en verde: 30 tests, 127 aserciones (`Auth/LoginTest`, `RoleMiddlewareTest`, scaffold actualizado).
-  - Commit: `93ea16a`
+  - Commit: `bfa850d`
 - [ ] **Fase 3: SuperAdmin (Negocios, Suspensión y Ventana de Gracia)**
 - [ ] **Fase 4: Inventario y Alertas de Stock Persistentes**
 - [ ] **Fase 5: Pedidos, Concurrencia Pesimista y Máquina de Estados**
