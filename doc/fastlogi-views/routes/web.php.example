@@ -1,0 +1,41 @@
+<?php
+
+use Illuminate\Support\Facades\Route;
+
+/*
+|--------------------------------------------------------------------------
+| FastLogi — rutas de prueba para ver las vistas del MVP
+|--------------------------------------------------------------------------
+| Route::view() permite renderizar cada vista sin controlador todavía.
+| Los nombres de ruta coinciden con los que usan los layouts (sidebar / nav
+| inferior), así el ítem activo se resalta solo. Cuando exista un controlador,
+| reemplaza Route::view por Route::get([Controller::class, 'metodo']).
+|
+| Más adelante envuelve cada grupo con auth + rol (Spatie), p. ej.:
+|   ->middleware(['auth', 'role:dueno'])
+*/
+
+Route::view('/login', 'auth.login')->name('login');
+// Route::post('/login', [AuthController::class, 'store'])->name('login.store');
+
+// ── SuperAdmin ──────────────────────────────────────────────
+Route::prefix('superadmin')->name('superadmin.')->group(function () {
+    Route::view('/', 'superadmin.dashboard')->name('dashboard');
+    Route::view('/negocios', 'superadmin.dashboard')->name('businesses.index');
+});
+
+// ── Dueño de negocio ────────────────────────────────────────
+Route::prefix('negocio')->name('owner.')->group(function () {
+    Route::view('/', 'owner.dashboard')->name('dashboard');
+    Route::view('/pedidos', 'owner.orders.index')->name('orders.index');
+    Route::view('/pedidos/nuevo', 'owner.orders.create')->name('orders.create');
+    Route::view('/pedidos/{order}', 'owner.orders.show')->name('orders.show');
+    Route::view('/inventario', 'owner.inventory')->name('inventory.index');
+    Route::view('/repartidores', 'owner.drivers')->name('drivers.index');
+});
+
+// ── Repartidor (móvil) ──────────────────────────────────────
+Route::prefix('repartidor')->name('driver.')->group(function () {
+    Route::view('/rutas', 'driver.routes')->name('routes');
+    Route::view('/pedidos/{order}', 'driver.order-detail')->name('orders.show');
+});
