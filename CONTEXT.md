@@ -91,7 +91,7 @@ FastLogi es una plataforma SaaS multi-tenant diseñada para pequeños y medianos
   - UI Livewire `Driver\Routes` (estado de flota, ofertas con cuenta atrás y aceptar/rechazar, pedidos en curso) y `Driver\OrderDetail` (barra de progreso, manifiesto, escaneos, escanear recogida/entrega, marcar entregado en pedidos sin trazabilidad y reportar incidencia). Las rutas `driver.routes`/`driver.orders.show` reutilizan los componentes y aíslan por `delivery_driver_id` (un repartidor solo ve sus pedidos).
   - Nota de alcance: RF-011 menciona un endpoint con token Sanctum; en el MVP se usa una ruta web autenticada por sesión (mismo panel web del repartidor) para no introducir emisión de tokens fuera de alcance.
   - Pruebas Pest en verde: 137 tests, 443 aserciones (`PackageScanServiceTest`, `DriverTelemetryServiceTest`, `DriverTelemetryEndpointTest`, `Livewire/DriverPanelTest`).
-  - Commit: `PENDING`
+  - Commit: `d78766c`
 - [ ] **Fase 7: Dashboard de Dueño, Notificaciones y Timeline**
 - [ ] **Fase 8: Reportes en PDF y Cierre**
 
