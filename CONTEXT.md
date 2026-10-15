@@ -73,7 +73,7 @@ FastLogi es una plataforma SaaS multi-tenant diseñada para pequeños y medianos
   - Excepciones de dominio `InsufficientStockException` y `ProductInUseException` (no se eliminan productos con pedidos asociados para no romper la auditoría).
   - Migración `2026_10_15_000012_add_out_of_stock_alerted_to_products_table`.
   - Pruebas Pest en verde: 74 tests, 260 aserciones.
-  - Commit: `PENDING`
+  - Commit: `a7618bc`
 - [ ] **Fase 5: Pedidos, Concurrencia Pesimista y Máquina de Estados**
 - [ ] **Fase 6: Panel del Repartidor, Escaneos, GPS e Inactividad**
 - [ ] **Fase 7: Dashboard de Dueño, Notificaciones y Timeline**
