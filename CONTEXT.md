@@ -101,7 +101,7 @@ FastLogi es una plataforma SaaS multi-tenant diseñada para pequeños y medianos
   - Nota de alcance: el timeline de escaneos por pedido (RF-006) ya vivía en el modal de detalle de `Owner\Orders`; en F7 se complementa con el feed de actividad a nivel de negocio y se mantiene el polling de 10 s como mecanismo de notificación (sin push/WebSocket).
   - `DatabaseSeeder`: 3 notificaciones in-app de demostración para el dueño principal (stock bajo, agotado y oferta expirada).
   - Pruebas Pest en verde: 162 tests, 523 aserciones (`DriverManagementServiceTest`, `Livewire/OwnerDashboardTest`, `Livewire/NotificationCenterTest`, `Livewire/OwnerDriversTest`).
-  - Commit: `PENDING`
+  - Commit: `96ff606`
 - [ ] **Fase 8: Reportes en PDF y Cierre**
 
 ---
