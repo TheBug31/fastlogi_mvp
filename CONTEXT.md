@@ -56,7 +56,15 @@ FastLogi es una plataforma SaaS multi-tenant diseñada para pequeños y medianos
   - Reglas consolidadas en `User::canLogin()` (sin duplicación en el controlador).
   - Pruebas Pest en verde: 30 tests, 127 aserciones (`Auth/LoginTest`, `RoleMiddlewareTest`, scaffold actualizado).
   - Commit: `bfa850d`
-- [ ] **Fase 3: SuperAdmin (Negocios, Suspensión y Ventana de Gracia)**
+- [x] **Fase 3: SuperAdmin (Negocios, Suspensión y Ventana de Gracia)**
+  - `BusinessService::createWithOwner()`: alta atómica de negocio + usuario dueño en una sola transacción (RF-004).
+  - `BusinessSuspensionService`: `suspend()` (bloquea al dueño, cancela `offered` liberando reserva, congela `pending`, deja gracia de 24 h a `assigned`/`in_transit`), `reactivate()` y `closeGraceOrders()` (RF-003, CU20).
+  - `InventoryService::releaseForOrder()`: liberación de reserva con `lockForUpdate()` en orden ascendente de `product_id`, idempotente y con rearme de la alerta de stock.
+  - Componente Livewire `Superadmin\Dashboard`: KPIs reales, tabla de negocios, filtros/búsqueda, modales de alta y suspensión, y acciones reactivar / "Cerrar pedidos en gracia".
+  - Job `CloseGraceOrders` + tarea programada `close-expired-grace-windows` (cada minuto) que cierra las ventanas de gracia vencidas.
+  - Notificación in-app `OrderCancelled` a los repartidores afectados y bitácora en `order_status_logs`.
+  - Pruebas Pest en verde: 54 tests, 205 aserciones.
+  - Commit: `PENDING`
 - [ ] **Fase 4: Inventario y Alertas de Stock Persistentes**
 - [ ] **Fase 5: Pedidos, Concurrencia Pesimista y Máquina de Estados**
 - [ ] **Fase 6: Panel del Repartidor, Escaneos, GPS e Inactividad**
