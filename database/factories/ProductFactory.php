@@ -21,6 +21,7 @@ class ProductFactory extends Factory
             'min_stock' => 5,
             'unit' => 'unidad',
             'low_stock_alerted' => false,
+            'out_of_stock_alerted' => false,
         ];
     }
 
@@ -30,6 +31,7 @@ class ProductFactory extends Factory
             'stock' => 3,
             'min_stock' => 10,
             'low_stock_alerted' => true,
+            'out_of_stock_alerted' => false,
         ]);
     }
 
@@ -39,6 +41,7 @@ class ProductFactory extends Factory
             'stock' => 0,
             'min_stock' => 10,
             'low_stock_alerted' => true,
+            'out_of_stock_alerted' => true,
         ]);
     }
 }

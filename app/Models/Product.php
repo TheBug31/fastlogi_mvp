@@ -20,6 +20,7 @@ class Product extends Model
         'min_stock',
         'unit',
         'low_stock_alerted',
+        'out_of_stock_alerted',
     ];
 
     protected $casts = [
@@ -27,6 +28,7 @@ class Product extends Model
         'stock' => 'integer',
         'min_stock' => 'integer',
         'low_stock_alerted' => 'boolean',
+        'out_of_stock_alerted' => 'boolean',
     ];
 
     public function orderItems(): HasMany

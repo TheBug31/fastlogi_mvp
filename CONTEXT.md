@@ -65,7 +65,15 @@ FastLogi es una plataforma SaaS multi-tenant diseñada para pequeños y medianos
   - Notificación in-app `OrderCancelled` a los repartidores afectados y bitácora en `order_status_logs`.
   - Pruebas Pest en verde: 54 tests, 205 aserciones.
   - Commit: `b2c0b5e`
-- [ ] **Fase 4: Inventario y Alertas de Stock Persistentes**
+- [x] **Fase 4: Inventario y Alertas de Stock Persistentes**
+  - `InventoryService` completo: `createProduct`, `updateProduct`, `restock`, `adjustStock`, `reserveForOrder`, `releaseForOrder`, `returnForOrder` y `deleteProduct`. Toda mutación de stock usa `DB::transaction` con `lockForUpdate()` en orden ascendente de `product_id` y registra un `inventory_movement`.
+  - Regla de alertas (RF-008 §4.8.1): disparo único al cruzar el mínimo (`low_stock_alerted`), alerta adicional de agotado (`out_of_stock_alerted`, nueva columna) y rearme al volver a `stock >= min_stock`.
+  - Notificación `LowStockAlert` (canales `database` + `mail`, encolada) enviada a los dueños del negocio fuera de la transacción de stock.
+  - Componente Livewire `Owner\Inventory`: tabla con búsqueda y filtro por estado, banner de stock bajo, y alta/edición/eliminación de productos (la edición de stock genera un movimiento `adjustment` y evalúa alertas).
+  - Excepciones de dominio `InsufficientStockException` y `ProductInUseException` (no se eliminan productos con pedidos asociados para no romper la auditoría).
+  - Migración `2026_10_15_000012_add_out_of_stock_alerted_to_products_table`.
+  - Pruebas Pest en verde: 74 tests, 260 aserciones.
+  - Commit: `PENDING`
 - [ ] **Fase 5: Pedidos, Concurrencia Pesimista y Máquina de Estados**
 - [ ] **Fase 6: Panel del Repartidor, Escaneos, GPS e Inactividad**
 - [ ] **Fase 7: Dashboard de Dueño, Notificaciones y Timeline**
