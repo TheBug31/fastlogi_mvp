@@ -1,6 +1,8 @@
 <?php
 
 use App\Models\Business;
+use App\Models\DeliveryDriver;
+use App\Models\Order;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 
@@ -46,10 +48,15 @@ test('owner views render correctly in scaffold', function () {
 
 test('driver views render correctly in scaffold', function () {
     $business = Business::factory()->create();
-    $driver = User::factory()->driver($business)->create();
+    $driverUser = User::factory()->driver($business)->create();
+    $driver = DeliveryDriver::factory()->create([
+        'user_id' => $driverUser->id,
+        'business_id' => $business->id,
+    ]);
+    $order = Order::factory()->assigned($driver)->create(['business_id' => $business->id]);
 
-    $this->actingAs($driver);
+    $this->actingAs($driverUser);
 
     $this->get('/repartidor/rutas')->assertStatus(200);
-    $this->get('/repartidor/pedidos/1')->assertStatus(200);
+    $this->get('/repartidor/pedidos/'.$order->id)->assertStatus(200);
 });

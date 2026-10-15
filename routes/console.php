@@ -2,6 +2,7 @@
 
 use App\Enums\OrderStatus;
 use App\Jobs\CloseGraceOrders;
+use App\Jobs\DetectInactiveDrivers;
 use App\Jobs\ExpireOrderOffer;
 use App\Models\Order;
 use App\Models\Scopes\BusinessScope;
@@ -36,3 +37,10 @@ Schedule::call(function () {
     ->everyMinute()
     ->name('expire-order-offers')
     ->description('Revierte las ofertas de pedido vencidas (90 s) no procesadas por el job');
+
+// RF-011: drivers with accepted orders that stopped reporting GPS are marked
+// offline and the owner is notified.
+Schedule::call(fn () => DetectInactiveDrivers::dispatch())
+    ->everyMinute()
+    ->name('detect-inactive-drivers')
+    ->description('Marca como offline a los repartidores inactivos y notifica al dueño');

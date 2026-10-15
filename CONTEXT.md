@@ -83,7 +83,15 @@ FastLogi es una plataforma SaaS multi-tenant diseñada para pequeños y medianos
   - UI Livewire `Owner\Orders`: KPIs, filtros/búsqueda, tabla con acciones (ofrecer, cancelar, reasignar, incidencia, confirmar devolución) y modal de detalle con timeline; las rutas `owner.orders.index/create/show` reutilizan el componente.
   - Pruebas Pest en verde: 110 tests, 379 aserciones — incluye concurrencia con **dos conexiones MySQL independientes** (bloqueo de fila y rechazo de la segunda reserva de la última unidad).
   - Commit: `84ffd31`
-- [ ] **Fase 6: Panel del Repartidor, Escaneos, GPS e Inactividad**
+- [x] **Fase 6: Panel del Repartidor, Escaneos, GPS e Inactividad**
+  - `PackageScanService`: escaneo de recogida (`assigned → in_transit`, paquete `picked_up`) y de entrega (`in_transit → delivered`, paquete `delivered`), guardando lat/lng y `scanned_at` en `package_scans`; idempotente por tipo de escaneo y dentro de una transacción con `lockForUpdate()` del pedido y del paquete (RF-006, CU14, CU15).
+  - `DriverTelemetryService`: `record()`/`touch()` actualizan lat/lng/`last_seen_at` y restauran la disponibilidad según la carga (un ping vuelve a `busy`/`available` superando un `offline` por inactividad); `inactiveDrivers()` detecta repartidores con pedidos `assigned`/`in_transit` cuyo `last_seen_at` supera el umbral del negocio (`inactivity_threshold_minutes`, default 15); `flagInactive()` marca `offline` y notifica una sola vez por episodio.
+  - Job `DetectInactiveDrivers` + tarea programada `detect-inactive-drivers` (cada minuto) que marca y notifica; notificación in-app `DriverInactive` al dueño (RF-011, CU17).
+  - Endpoint `POST /repartidor/telemetria` (`DriverTelemetryController`) que valida lat/lng y responde JSON; el panel del repartidor envía un ping cada 60 s mediante `navigator.geolocation` **solo cuando hay al menos un pedido `in_transit`**.
+  - UI Livewire `Driver\Routes` (estado de flota, ofertas con cuenta atrás y aceptar/rechazar, pedidos en curso) y `Driver\OrderDetail` (barra de progreso, manifiesto, escaneos, escanear recogida/entrega, marcar entregado en pedidos sin trazabilidad y reportar incidencia). Las rutas `driver.routes`/`driver.orders.show` reutilizan los componentes y aíslan por `delivery_driver_id` (un repartidor solo ve sus pedidos).
+  - Nota de alcance: RF-011 menciona un endpoint con token Sanctum; en el MVP se usa una ruta web autenticada por sesión (mismo panel web del repartidor) para no introducir emisión de tokens fuera de alcance.
+  - Pruebas Pest en verde: 137 tests, 443 aserciones (`PackageScanServiceTest`, `DriverTelemetryServiceTest`, `DriverTelemetryEndpointTest`, `Livewire/DriverPanelTest`).
+  - Commit: `PENDING`
 - [ ] **Fase 7: Dashboard de Dueño, Notificaciones y Timeline**
 - [ ] **Fase 8: Reportes en PDF y Cierre**
 

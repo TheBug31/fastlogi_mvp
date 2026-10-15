@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\Auth\LoginController;
+use App\Http\Controllers\Driver\DriverTelemetryController;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/', function () {
@@ -44,4 +45,5 @@ Route::prefix('repartidor')
     ->group(function () {
         Route::view('/rutas', 'driver.routes')->name('routes');
         Route::view('/pedidos/{order?}', 'driver.order-detail')->name('orders.show');
+        Route::post('/telemetria', DriverTelemetryController::class)->name('telemetry');
     });
