@@ -64,7 +64,7 @@ FastLogi es una plataforma SaaS multi-tenant diseñada para pequeños y medianos
   - Job `CloseGraceOrders` + tarea programada `close-expired-grace-windows` (cada minuto) que cierra las ventanas de gracia vencidas.
   - Notificación in-app `OrderCancelled` a los repartidores afectados y bitácora en `order_status_logs`.
   - Pruebas Pest en verde: 54 tests, 205 aserciones.
-  - Commit: `PENDING`
+  - Commit: `b2c0b5e`
 - [ ] **Fase 4: Inventario y Alertas de Stock Persistentes**
 - [ ] **Fase 5: Pedidos, Concurrencia Pesimista y Máquina de Estados**
 - [ ] **Fase 6: Panel del Repartidor, Escaneos, GPS e Inactividad**
