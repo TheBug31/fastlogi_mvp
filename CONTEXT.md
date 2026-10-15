@@ -74,7 +74,15 @@ FastLogi es una plataforma SaaS multi-tenant diseñada para pequeños y medianos
   - Migración `2026_10_15_000012_add_out_of_stock_alerted_to_products_table`.
   - Pruebas Pest en verde: 74 tests, 260 aserciones.
   - Commit: `a7618bc`
-- [ ] **Fase 5: Pedidos, Concurrencia Pesimista y Máquina de Estados**
+- [x] **Fase 5: Pedidos, Concurrencia Pesimista y Máquina de Estados**
+  - `OrderService`: `createOrder` (reserva de stock + paquete si hay trazabilidad, en una única transacción con reintentos), `offerToDriver`, `acceptOffer`, `rejectOffer`, `expireOffer`, `cancelOrder`, `reassignToPending`, `markInTransit`, `markDelivered`, `registerIncident` y `confirmDevolution`; matriz de transiciones de §4.1.3 en `canTransition()` y bitácora en `order_status_logs`.
+  - `DriverAvailabilityService`: recalcula `available`/`busy` según pedidos `assigned`/`in_transit` y lista candidatos por capacidad (incluye ofertas pendientes, RF-005).
+  - Ofertas con ventana de 90 s: job encolado `ExpireOrderOffer` + barrido del scheduler `expire-order-offers` como respaldo; la aceptación y la expiración son idempotentes bajo `lockForUpdate()` del pedido.
+  - Notificaciones in-app `OrderOffered` (repartidor) y `OfferRejectedOrExpired` (dueño); la reserva devuelve las alertas y el llamador las despacha tras el commit (nunca dentro de la transacción).
+  - Excepciones de dominio `InvalidOrderTransitionException`, `OfferNotAllowedException` y `BusinessSuspendedException`.
+  - UI Livewire `Owner\Orders`: KPIs, filtros/búsqueda, tabla con acciones (ofrecer, cancelar, reasignar, incidencia, confirmar devolución) y modal de detalle con timeline; las rutas `owner.orders.index/create/show` reutilizan el componente.
+  - Pruebas Pest en verde: 110 tests, 379 aserciones — incluye concurrencia con **dos conexiones MySQL independientes** (bloqueo de fila y rechazo de la segunda reserva de la última unidad).
+  - Commit: `PENDING`
 - [ ] **Fase 6: Panel del Repartidor, Escaneos, GPS e Inactividad**
 - [ ] **Fase 7: Dashboard de Dueño, Notificaciones y Timeline**
 - [ ] **Fase 8: Reportes en PDF y Cierre**

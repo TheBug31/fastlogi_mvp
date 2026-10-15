@@ -136,6 +136,19 @@ class InventoryService
      */
     public function reserveForOrder(Order $order, array $lines, ?User $actor = null): void
     {
+        $this->dispatchAlerts($this->reserve($order, $lines, $actor));
+    }
+
+    /**
+     * Transactional core of the reservation, returning the pending alerts instead
+     * of sending them, so it can be safely nested inside the order-creation
+     * transaction without notifying before commit (SRS §4.1.1).
+     *
+     * @param  array<int, array{product_id: int, quantity: int}>  $lines
+     * @return array<int, array{product: Product, type: string}>
+     */
+    public function reserve(Order $order, array $lines, ?User $actor = null): array
+    {
         $alerts = [];
 
         DB::transaction(function () use ($order, $lines, $actor, &$alerts) {
@@ -155,7 +168,7 @@ class InventoryService
             }
         });
 
-        $this->dispatchAlerts($alerts);
+        return $alerts;
     }
 
     /**
@@ -164,7 +177,17 @@ class InventoryService
      */
     public function releaseForOrder(Order $order, ?User $actor = null): void
     {
-        $this->moveOrderStock($order, InventoryMovementType::Release, $actor);
+        $this->dispatchAlerts($this->release($order, $actor));
+    }
+
+    /**
+     * Transactional core of the release, returning the pending alerts.
+     *
+     * @return array<int, array{product: Product, type: string}>
+     */
+    public function release(Order $order, ?User $actor = null): array
+    {
+        return $this->moveOrderStock($order, InventoryMovementType::Release, $actor);
     }
 
     /**
@@ -173,7 +196,17 @@ class InventoryService
      */
     public function returnForOrder(Order $order, ?User $actor = null): void
     {
-        $this->moveOrderStock($order, InventoryMovementType::Return, $actor);
+        $this->dispatchAlerts($this->returnStock($order, $actor));
+    }
+
+    /**
+     * Transactional core of the devolución, returning the pending alerts.
+     *
+     * @return array<int, array{product: Product, type: string}>
+     */
+    public function returnStock(Order $order, ?User $actor = null): array
+    {
+        return $this->moveOrderStock($order, InventoryMovementType::Return, $actor);
     }
 
     /**
@@ -191,8 +224,9 @@ class InventoryService
 
     /**
      * @param  InventoryMovementType  $type  Release or Return.
+     * @return array<int, array{product: Product, type: string}>
      */
-    private function moveOrderStock(Order $order, InventoryMovementType $type, ?User $actor): void
+    private function moveOrderStock(Order $order, InventoryMovementType $type, ?User $actor): array
     {
         $alerts = [];
 
@@ -218,7 +252,7 @@ class InventoryService
             }
         });
 
-        $this->dispatchAlerts($alerts);
+        return $alerts;
     }
 
     /**
@@ -296,7 +330,7 @@ class InventoryService
     /**
      * @param  array<int, array{product: Product, type: string}>  $alerts
      */
-    private function dispatchAlerts(array $alerts): void
+    public function dispatchAlerts(array $alerts): void
     {
         foreach ($alerts as $alert) {
             /** @var Product $product */
