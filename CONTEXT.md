@@ -113,6 +113,18 @@ FastLogi es una plataforma SaaS multi-tenant diseñada para pequeños y medianos
 
 ---
 
+## 4. Reglas Críticas del Negocio (Fuentes de Verdad: SRS v1.2)
+
+1. **Aislamiento Multi-Tenant (RF-007):** Toda consulta de orders, products y delivery_drivers filtra por el `business_id` del usuario autenticado; el SuperAdmin tiene acceso global para tareas administrativas.
+2. **Reserva Concurrente de Stock (RF-001):** `DB::transaction(..., 3)` con `lockForUpdate()` sobre los productos en orden ascendente de `product_id`. Sin side-effects dentro de la transacción. El stock nunca es negativo.
+3. **Máquina de Estados de Pedidos (RF-001 §4.1.3):** 7 estados (`pending`, `offered`, `assigned`, `in_transit`, `delivered`, `cancelled`, `incident`). Un pedido `in_transit` nunca se cancela; transiciona a `delivered` o `incident`.
+4. **Capacidad y Ofertas (RF-002, RF-005):** Ofertas vencen en 90 s (`offer_expires_at`). Las ofertas cuentan en la capacidad activa del repartidor (`offered + assigned + in_transit`). Un repartidor con pedidos activos $\ge$ `max_active_orders` o desconectado (`offline`) no es elegible.
+5. **Alertas de Stock Bajo (RF-008):** Se dispara una única vez al cruzar el mínimo (`stock_ant >= min && stock_nuevo < min`). Se rearma cuando `stock >= min`. Alerta adicional de "agotado" al llegar a 0.
+6. **Suspensión de Negocio (RF-003):** Bloqueo inmediato del login del dueño. Pedidos `offered` se cancelan (liberan stock); `pending` se congelan; `assigned`/`in_transit` tienen 24 horas de gracia para entrega o incidencia.
+7. **Telemetría y Detección de Inactividad (RF-011):** Repartidor envía GPS cada 60 s sólo con pedidos `in_transit`. Scheduler detecta inactividad tras `inactivity_threshold_minutes` (default 15 min), pasa a `offline` y notifica al dueño.
+
+---
+
 ## 5. Fuera de Alcance (Decisiones del MVP)
 
 - Variantes de producto y catálogos jerárquicos.
@@ -124,12 +136,39 @@ FastLogi es una plataforma SaaS multi-tenant diseñada para pequeños y medianos
 
 ---
 
-## 4. Reglas Críticas del Negocio (Fuentes de Verdad: SRS v1.2)
+## 6. Verificación Funcional y Estado Final
 
-1. **Aislamiento Multi-Tenant (RF-007):** Toda consulta de orders, products y delivery_drivers filtra por el `business_id` del usuario autenticado; el SuperAdmin tiene acceso global para tareas administrativas.
-2. **Reserva Concurrente de Stock (RF-001):** `DB::transaction(..., 3)` con `lockForUpdate()` sobre los productos en orden ascendente de `product_id`. Sin side-effects dentro de la transacción. El stock nunca es negativo.
-3. **Máquina de Estados de Pedidos (RF-001 §4.1.3):** 7 estados (`pending`, `offered`, `assigned`, `in_transit`, `delivered`, `cancelled`, `incident`). Un pedido `in_transit` nunca se cancela; transiciona a `delivered` o `incident`.
-4. **Capacidad y Ofertas (RF-002, RF-005):** Ofertas vencen en 90 s (`offer_expires_at`). Las ofertas cuentan en la capacidad activa del repartidor (`offered + assigned + in_transit`). Un repartidor con pedidos activos $\ge$ `max_active_orders` o desconectado (`offline`) no es elegible.
-5. **Alertas de Stock Bajo (RF-008):** Se dispara una única vez al cruzar el mínimo (`stock_ant >= min && stock_nuevo < min`). Se rearma cuando `stock >= min`. Alerta adicional de "agotado" al llegar a 0.
-6. **Suspensión de Negocio (RF-003):** Bloqueo inmediato del login del dueño. Pedidos `offered` se cancelan (liberan stock); `pending` se congelan; `assigned`/`in_transit` tienen 24 horas de gracia para entrega o incidencia.
-7. **Telemetría y Detección de Inactividad (RF-011):** Repartidor envía GPS cada 60 s sólo con pedidos `in_transit`. Scheduler detecta inactividad tras `inactivity_threshold_minutes` (default 15 min), pasa a `offline` y notifica al dueño.
+**Fecha:** 2026-10-15 · **Último commit verificado:** `feaf194`
+
+### 6.1 Suite automatizada
+
+- `php artisan test` → **169 tests, 548 aserciones, todas en verde** (base de datos MySQL `fastlogi_test`).
+- `php artisan migrate:fresh --seed` → sin errores; 9 usuarios (1 SuperAdmin + 2 dueños + 6 repartidores) y 3 notificaciones in-app de demostración.
+- `vendor/bin/pint` → sin cambios pendientes en los archivos tocados.
+
+### 6.2 Prueba de extremo a extremo por HTTP
+
+Levantado `php artisan serve` y navegado con sesión y cookies reales (login por `identifier` + `password`):
+
+| Flujo | Resultado |
+| :--- | :--- |
+| `GET /login` | `200` con formulario |
+| Login dueño → `/negocio` | `200` · "Panel de Operaciones" |
+| → `/negocio/repartidores` | `200` · "Gestión de Repartidores" |
+| → `/negocio/reportes` | `200` · "Descargar pedidos" |
+| → `/negocio/notificaciones` | `200` · "Centro de Notificaciones" |
+| `GET /negocio/reportes/pedidos/pdf` | `200` · `application/pdf`, `attachment`, ~880 KB |
+| `GET /negocio/reportes/repartidores/pdf` | `200` · `application/pdf`, `attachment`, ~880 KB |
+| Login SuperAdmin → `/superadmin` | `200` · "Negocios" |
+| Login repartidor → `/repartidor/rutas` | `200` · "Estado de flota" / "Nuevas ofertas" |
+
+### 6.3 Incidencia detectada y corregida
+
+- **CSS desactualizado:** las utilidades introducidas en F7/F8 (colores arbitrarios de los badges, p. ej. `text-[#15803D]`, `bg-[#DCFCE7]`, `bg-[#EDE9FE]`) no estaban en `public/build` porque Tailwind compila en tiempo de build. Los tests no lo detectan. **Resuelto** con `npm run build`; verificado que todas las clases y tokens del tema (`p-space-lg`, `font-body-md`, `surface-container-lowest`, etc.) están presentes en el CSS compilado. `public/build` está en `.gitignore`, por lo que un clon nuevo debe ejecutar `npm install && npm run build`.
+
+### 6.4 Advertencias operativas
+
+- Requiere **tres procesos**: `php artisan serve` + `php artisan queue:work` + `php artisan schedule:work`. Sin worker no se ejecutan la expiración de ofertas (90 s), la detección de inactividad ni el cierre de ventanas de gracia.
+- `MAIL_MAILER=log`: los correos de alerta se escriben en `storage/logs`, no se envían realmente (configuración de desarrollo del SRS).
+- Sin push/WebSockets (por diseño): notificaciones por *polling* (campana 10 s, dashboard 15 s).
+- El enlace `public/storage` no se crea; no se usa (sin subida de archivos, PDFs en memoria). Si se requiere: `php artisan storage:link`.

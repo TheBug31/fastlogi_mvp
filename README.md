@@ -5,7 +5,8 @@ domicilios de pequeños negocios colombianos. Cada negocio (tenant) opera aislad
 roles de **SuperAdmin**, **Dueño de negocio** y **Repartidor**.
 
 Documentación funcional de referencia: [`doc/SRS_FastLogi_v1_2.md`](doc/SRS_FastLogi_v1_2.md).
-Bitácora de implementación por fases: [`CONTEXT.md`](CONTEXT.md).
+Estado y contexto del proyecto: [`CONTEXT.md`](CONTEXT.md).
+Bitácora cronológica de desarrollo: [`LOG.md`](LOG.md).
 
 ## Stack
 
