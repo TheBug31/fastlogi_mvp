@@ -109,7 +109,7 @@ FastLogi es una plataforma SaaS multi-tenant diseñada para pequeños y medianos
   - Página `Owner\Reports` (`owner.reports.index`, enlazada desde el menú): filtros en vivo, KPIs del periodo (pedidos, valor total, repartidores), vista previa de los primeros 10 pedidos y botones de descarga de ambos PDF. Se activa la ruta `owner.reports.*` que antes aparecía deshabilitada en el layout.
   - Cierre: `README.md` reescrito con descripción, stack, requisitos, instalación paso a paso, ejecución (servidor + `queue:work` + `schedule:work`), tareas programadas, credenciales de demostración, pruebas y mapa RF → archivos, además de las desviaciones de alcance (Tailwind en lugar de Bootstrap; telemetría por sesión web en lugar de token Sanctum).
   - Pruebas Pest en verde: **169 tests, 548 aserciones** (`ReportsPdfTest` añade 7 pruebas: aislamiento por negocio, filtros de estado/fecha, agregados de repartidores, descarga real de ambos PDF, rango inválido rechazado y control de acceso por rol).
-  - Commit: `PENDING`
+  - Commit: `d89b967`
 
 ---
 
