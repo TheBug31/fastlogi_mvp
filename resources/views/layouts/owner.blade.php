@@ -1,31 +1,91 @@
 @extends('layouts.base')
 
 @section('body')
-<aside class="fixed left-0 top-0 h-full w-64 bg-surface-container-lowest z-50 flex flex-col border-r border-outline-variant"><div class="h-16 px-space-md flex items-center gap-space-sm border-b border-outline-variant bg-surface-container-low"><div class="w-8 h-8 bg-primary-container text-on-primary-container flex items-center justify-center font-headline-lg text-headline-sm font-bold">FL</div><div class="flex flex-col"><span class="font-headline-sm text-headline-sm text-on-surface tracking-tight leading-none">FastLogi</span><span class="font-label-sm text-label-sm text-on-surface-variant uppercase tracking-wider">Operaciones CO</span></div></div><div class="p-space-md flex-1 overflow-y-auto"><div class="px-space-xs mb-space-sm font-label-md text-label-md text-on-surface-variant uppercase tracking-wider">Menú Principal</div><nav class="space-y-space-xs">@php
+@php
+    $business = auth()->user()?->business;
+
     $items = [
-        [['owner.dashboard'], 'owner.dashboard', 'grid_view', 'Dashboard'],
-        [['owner.orders.index', 'owner.orders.show'], 'owner.orders.index', 'local_shipping', 'Pedidos'],
-        [['owner.orders.create'], 'owner.orders.create', 'add_circle', 'Nuevo pedido'],
-        [['owner.inventory.*'], 'owner.inventory.index', 'inventory_2', 'Inventario'],
-        [['owner.drivers.*'], 'owner.drivers.index', 'two_wheeler', 'Repartidores'],
-        [['owner.notifications.*'], 'owner.notifications.index', 'notifications', 'Notificaciones'],
-        [['owner.reports.*'], 'owner.reports.index', 'analytics', 'Reportes'],
-        [['owner.settings.*'], 'owner.settings.index', 'settings', 'Configuración'],
+        [['owner.dashboard'], 'owner.dashboard', 'home', 'Dashboard'],
+        [['owner.orders.index', 'owner.orders.show'], 'owner.orders.index', 'truck', 'Pedidos'],
+        [['owner.orders.create'], 'owner.orders.create', 'plus-circle', 'Nuevo pedido'],
+        [['owner.inventory.*'], 'owner.inventory.index', 'archive-box', 'Inventario'],
+        [['owner.drivers.*'], 'owner.drivers.index', 'users', 'Repartidores'],
+        [['owner.reports.*'], 'owner.reports.index', 'chart-bar', 'Reportes'],
+        [['owner.settings.*'], 'owner.settings.index', 'cog', 'Configuración'],
     ];
 @endphp
-@foreach ($items as [$patterns, $route, $icon, $label])
-    @php $active = request()->routeIs(...$patterns); @endphp
-    <a href="{{ Route::has($route) ? route($route) : '#' }}"
-       @if($active) aria-current="page" @endif
-       class="flex items-center gap-space-sm px-space-md py-space-sm rounded-lg transition-colors {{ $active ? 'bg-primary-container text-on-primary-container font-semibold' : 'text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface font-body-md text-body-md' }}">
-        <span class="material-symbols-outlined text-[20px]">{{ $icon }}</span>
-        <span>{{ $label }}</span>
-    </a>
-@endforeach</nav></div><div class="p-space-md border-t border-outline-variant bg-surface-container-low"><div class="flex items-center justify-between text-on-surface-variant font-body-sm text-body-sm"><span>Estado Telemetría</span><span class="flex items-center gap-1 font-label-sm text-label-sm text-primary uppercase"><span class="w-2 h-2 rounded-full bg-primary-container animate-pulse"></span> En línea</span></div></div></aside>
-<div class="pl-64">
-<header class="fixed top-0 left-64 right-0 h-16 bg-surface-container-lowest/90 backdrop-blur-md border-b border-outline-variant z-40 px-space-lg flex items-center justify-between"><div class="flex items-center gap-space-md"><div class="flex items-center gap-space-sm px-space-sm py-space-xs rounded-lg border border-outline-variant bg-surface-container-low"><span class="material-symbols-outlined text-primary text-[20px]">storefront</span><span class="font-body-md text-body-md font-medium text-on-surface">{{ auth()->user()?->business?->name ?? 'FastLogi' }}</span><span class="material-symbols-outlined text-on-surface-variant text-[18px]">expand_more</span></div></div><div class="flex items-center gap-space-md"><livewire:owner.notification-bell /><div class="h-6 w-px bg-outline-variant"></div><div class="flex items-center gap-space-sm"><div class="text-right"><div class="font-headline-sm text-label-lg font-semibold text-on-surface leading-tight">{{ auth()->user()?->name ?? 'Dueño de negocio' }}</div><div class="font-body-sm text-body-sm text-on-surface-variant">{{ auth()->user()?->business?->name ?? 'Mi Negocio' }}</div></div><div class="w-8 h-8 rounded-full bg-primary flex items-center justify-center"><span class="material-symbols-outlined text-on-primary text-[18px]">person</span></div><form method="POST" action="{{ route('logout') }}" class="inline ml-1">@csrf<button type="submit" title="Cerrar sesión" class="p-1.5 text-on-surface-variant hover:text-error transition-colors rounded-lg flex items-center"><span class="material-symbols-outlined text-[20px]">logout</span></button></form></div></div></header>
-<main class="relative pt-16 w-full min-h-screen px-space-lg py-space-md bg-surface">
-@yield('content')
-</main>
+
+<aside class="fixed inset-y-0 left-0 z-30 flex w-64 flex-col justify-between bg-sidebar">
+    <div>
+        <div class="flex h-16 items-center border-b border-white/10 px-6">
+            <img src="{{ asset('images/brand/logo-horizontal-dark.png') }}" alt="FastLogi" class="h-8 w-auto"/>
+        </div>
+
+        <nav class="space-y-1 p-3">
+            @foreach ($items as [$patterns, $route, $icon, $label])
+                @php
+                    $active = request()->routeIs(...$patterns);
+                    $enabled = Route::has($route);
+                @endphp
+
+                @if ($enabled)
+                    <a href="{{ route($route) }}"
+                       @if ($active) aria-current="page" @endif
+                       class="flex items-center gap-3 rounded-lg px-3.5 py-2.5 text-sm font-medium transition-colors {{ $active ? 'border-l-[3px] border-teal-500 bg-sidebar-active text-white' : 'text-slate-400 hover:bg-sidebar-active hover:text-white' }}">
+                        <x-icon :name="$icon" />
+                        <span>{{ $label }}</span>
+                    </a>
+                @else
+                    <span aria-disabled="true"
+                          class="pointer-events-none flex items-center gap-3 rounded-lg px-3.5 py-2.5 text-sm font-medium text-slate-400 opacity-50">
+                        <x-icon :name="$icon" />
+                        <span>{{ $label }}</span>
+                    </span>
+                @endif
+            @endforeach
+        </nav>
+    </div>
+
+    <div class="flex items-center justify-between gap-2 border-t border-white/10 px-6 py-4">
+        <span class="flex items-center gap-2 text-xs font-medium text-slate-400">
+            <span class="h-2 w-2 rounded-full bg-teal-500" aria-hidden="true"></span>
+            Servicio en línea
+        </span>
+
+        <form method="POST" action="{{ route('logout') }}">
+            @csrf
+            <button type="submit" title="Cerrar sesión" aria-label="Cerrar sesión"
+                    class="flex items-center rounded-lg p-1.5 text-slate-400 transition-colors hover:bg-sidebar-active hover:text-white focus:outline-none focus-visible:ring-2 focus-visible:ring-teal-500">
+                <x-icon name="arrow-right-on-rectangle" />
+            </button>
+        </form>
+    </div>
+</aside>
+
+<div class="min-h-screen pl-64">
+    <header class="sticky top-0 z-20 flex h-16 items-center justify-between border-b border-slate-200 bg-white px-8">
+        <div class="flex items-center gap-2.5">
+            <span class="flex h-8 w-8 items-center justify-center rounded-lg bg-teal-100 text-sm font-semibold text-teal-800" aria-hidden="true">{{ mb_strtoupper(mb_substr($business?->name ?? 'F', 0, 1)) }}</span>
+            <span class="text-base font-semibold text-slate-900">{{ $business?->name ?? 'FastLogi' }}</span>
+        </div>
+
+        <div class="flex items-center gap-4">
+            <livewire:owner.notification-bell />
+
+            <span class="h-6 w-px bg-slate-200" aria-hidden="true"></span>
+
+            <div class="flex items-center gap-2.5">
+                <div class="text-right">
+                    <div class="text-sm font-semibold leading-tight text-slate-900">{{ auth()->user()?->name }}</div>
+                    <div class="text-xs text-slate-500">{{ auth()->user()?->role?->label() }}</div>
+                </div>
+                <x-ui.avatar :name="auth()->user()?->name ?? ''" />
+            </div>
+        </div>
+    </header>
+
+    <main class="mx-auto max-w-7xl space-y-6 p-8">
+        @yield('content')
+    </main>
 </div>
 @endsection

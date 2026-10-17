@@ -2,6 +2,8 @@
 
 namespace App\Support;
 
+use App\Models\Order;
+
 /**
  * Maps the `data` payload of the in-app notifications (RF-002, RF-008, RF-011)
  * to presentation helpers shared by the header bell and the notification center.
@@ -16,7 +18,9 @@ class NotificationPresenter
     public static function url(array $data): ?string
     {
         if (! empty($data['order_id'])) {
-            return route('owner.orders.show', $data['order_id']);
+            $order = Order::withoutGlobalScopes()->find($data['order_id']);
+
+            return route('owner.orders.show', $order ?? $data['order_id']);
         }
 
         if (! empty($data['product_id'])) {
@@ -31,21 +35,22 @@ class NotificationPresenter
     }
 
     /**
-     * Material Symbols icon name for the notification type.
+     * Heroicons outline icon name (sin el prefijo "heroicon-o-") para el tipo de
+     * notificación; lo consume <x-icon :name="...">.
      *
      * @param  array<string, mixed>  $data
      */
     public static function icon(array $data): string
     {
         return match ($data['type'] ?? null) {
-            'low_stock' => 'inventory_2',
-            'out_of_stock' => 'production_quantity_limits',
-            'offer_rejected_or_expired' => 'replay',
-            'order_cancelled' => 'cancel',
-            'order_incident' => 'report',
-            'driver_inactive' => 'wifi_off',
-            'order_offered' => 'local_shipping',
-            default => 'notifications',
+            'low_stock' => 'archive-box',
+            'out_of_stock' => 'archive-box-x-mark',
+            'offer_rejected_or_expired' => 'arrow-path',
+            'order_cancelled' => 'x-circle',
+            'order_incident' => 'exclamation-triangle',
+            'driver_inactive' => 'signal-slash',
+            'order_offered' => 'truck',
+            default => 'bell',
         };
     }
 
@@ -57,9 +62,9 @@ class NotificationPresenter
     public static function tone(array $data): string
     {
         return match ($data['type'] ?? null) {
-            'out_of_stock', 'order_incident', 'driver_inactive' => 'text-error',
-            'low_stock', 'offer_rejected_or_expired', 'order_cancelled' => 'text-tertiary',
-            default => 'text-primary',
+            'out_of_stock', 'order_incident', 'driver_inactive' => 'text-red-600',
+            'low_stock', 'offer_rejected_or_expired', 'order_cancelled' => 'text-amber-600',
+            default => 'text-teal-600',
         };
     }
 

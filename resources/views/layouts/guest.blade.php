@@ -1,11 +1,48 @@
 @extends('layouts.base')
 
-@section('body_class', 'bg-surface font-body-md text-on-surface antialiased min-h-screen flex flex-col justify-between')
+@section('body_class', 'bg-white text-slate-900 antialiased')
 
 @section('body')
-<header class="w-full py-space-md px-margin-desktop flex items-center justify-between"><div class="flex items-center gap-space-sm"><img alt="FastLogi Logo" class="h-7 w-auto object-contain" src="https://lh3.googleusercontent.com/aida/AEtjO1Wvdd5_rBH0xSqpbopsGvcLkdZvn1LynW-D5SKLpKi9M9_gYx6GOgGxpa2exaZsR3i0er3SJisxTK05nkRxJ3ffQfaz6cYfzx5HS0_GvlM5bj5_sRVt7WJfCS8Rao1QncGiiGpqsznvXbZEFR_aMB3FpnrYyHIfzAjuF0LrYSky7jp2Hf9H2BAewUehrBjkZpcj9ASD1qy031NXwrxiFoowv434IWE1e5hS1jzMxxEKOZqI57DMW80RrQeT"/><span class="font-headline-sm text-headline-sm text-on-surface uppercase tracking-wider font-bold">FastLogi</span></div><span class="font-label-sm text-label-sm text-on-surface-variant uppercase tracking-widest">Colombia Network</span></header>
-<main class="flex-1 flex items-center justify-center w-full px-margin">
-@yield('content')
-</main>
-<footer class="w-full py-space-md px-margin-desktop flex items-center justify-center"><span class="font-label-md text-label-md text-on-surface-variant tracking-wider uppercase">Nexlab Studio</span></footer>
+<div class="flex min-h-screen flex-col md:flex-row">
+    <section class="flex flex-col justify-between gap-10 bg-sidebar p-14 text-white md:w-1/2">
+        <img src="{{ asset('images/brand/logo-horizontal-dark.png') }}" alt="FastLogi" class="h-8 w-auto"/>
+
+        <div>
+            <h1 class="text-4xl font-bold tracking-tight">Tu operación de domicilios, bajo control</h1>
+
+            <ul class="mt-10 space-y-5">
+                <li class="flex items-center gap-4">
+                    <span class="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg border border-white/10 bg-white/5 text-teal-400" aria-hidden="true">
+                        <x-icon name="truck" />
+                    </span>
+                    <span class="text-sm text-slate-300">Pedidos y repartidores en una sola pantalla</span>
+                </li>
+                <li class="flex items-center gap-4">
+                    <span class="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg border border-white/10 bg-white/5 text-teal-400" aria-hidden="true">
+                        <x-icon name="clock" />
+                    </span>
+                    <span class="text-sm text-slate-300">Trazabilidad de cada entrega</span>
+                </li>
+                <li class="flex items-center gap-4">
+                    <span class="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg border border-white/10 bg-white/5 text-teal-400" aria-hidden="true">
+                        <x-icon name="chart-bar" />
+                    </span>
+                    <span class="text-sm text-slate-300">Reportes de tu operación</span>
+                </li>
+            </ul>
+        </div>
+
+        <span class="text-xs text-slate-400">Colombia</span>
+    </section>
+
+    <section class="flex flex-col bg-white p-8 md:w-1/2">
+        <div class="flex flex-1 items-center justify-center">
+            <div class="w-full max-w-[400px]">
+                @yield('content')
+            </div>
+        </div>
+
+        <p class="pt-6 text-center text-xs text-slate-400">Nexlab Studio</p>
+    </section>
+</div>
 @endsection
