@@ -12,7 +12,11 @@
         $classes = 'h-'.$size.' w-'.$size;
     }
 
-    $svg = svg('heroicon-o-'.$name, ['class' => $classes])->toHtml();
+    // Cualquier otro atributo del llamador (x-show, wire:loading, data-*, title…) viaja al <svg>.
+    $svgAttributes = $attributes->getAttributes();
+    $svgAttributes['class'] = $classes;
+
+    $svg = svg('heroicon-o-'.$name, $svgAttributes)->toHtml();
 
     // El SVG fuente trae stroke-width="1.5"; la guía pide 1.75 (outline, 20 px).
     $svg = str_replace('stroke-width="1.5"', 'stroke-width="1.75"', $svg);

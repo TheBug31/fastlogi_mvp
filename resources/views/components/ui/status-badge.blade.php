@@ -13,7 +13,10 @@
         'incident' => ['label' => 'Incidencia', 'classes' => 'bg-red-100 text-red-700', 'dot' => 'bg-red-600'],
     ];
 
-    $entry = $map[$status] ?? $map['pending'];
+    // Los modelos emiten el enum (OrderStatus); también se acepta su valor en texto.
+    $key = $status instanceof \BackedEnum ? $status->value : (string) $status;
+
+    $entry = $map[$key] ?? $map['pending'];
 @endphp
 
 <span {{ $attributes->merge(['class' => trim('inline-flex items-center gap-1.5 whitespace-nowrap rounded-full px-2.5 py-1 text-xs font-medium '.$entry['classes'])]) }}>

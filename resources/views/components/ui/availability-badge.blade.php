@@ -9,7 +9,10 @@
         'offline' => ['label' => 'Desconectado', 'classes' => 'bg-slate-100 text-slate-600', 'dot' => 'bg-slate-400'],
     ];
 
-    $entry = $map[$availability] ?? $map['offline'];
+    // Los modelos emiten el enum (DriverAvailability); también se acepta su valor en texto.
+    $key = $availability instanceof \BackedEnum ? $availability->value : (string) $availability;
+
+    $entry = $map[$key] ?? $map['offline'];
 @endphp
 
 <span {{ $attributes->merge(['class' => trim('inline-flex items-center gap-1.5 whitespace-nowrap rounded-full px-2.5 py-1 text-xs font-medium '.$entry['classes'])]) }}>

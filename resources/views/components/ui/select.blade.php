@@ -28,7 +28,6 @@
     @if ($label)
         <label for="{{ $attributes->get('id', $name) }}" class="mb-1.5 block text-sm font-medium text-slate-700">
             {{ $label }}
-            @if ($required)<span class="text-red-600" aria-hidden="true">*</span>@endif
         </label>
     @endif
 
