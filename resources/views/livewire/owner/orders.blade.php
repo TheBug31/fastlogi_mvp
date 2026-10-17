@@ -1,442 +1,538 @@
-<div class="flex flex-col w-full pb-16">
-    @if (session('success'))
-        <div class="w-full bg-primary-fixed text-on-primary-fixed px-space-lg py-space-sm flex items-center gap-space-sm mb-space-md">
-            <span class="material-symbols-outlined text-[20px]">check_circle</span>
-            <span class="font-body-md">{{ session('success') }}</span>
-        </div>
-    @endif
+<div class="space-y-6">
+    <x-ui.toast />
 
     @error('devolution')
-        <div class="w-full bg-error-container text-on-error-container px-space-lg py-space-sm flex items-center gap-space-sm mb-space-md">
-            <span class="material-symbols-outlined text-[20px]">error</span>
-            <span class="font-body-md">{{ $message }}</span>
-        </div>
+        <x-ui.alert type="error">{{ $message }}</x-ui.alert>
     @enderror
 
-    <!-- Header -->
-    <div class="flex flex-col md:flex-row md:items-center justify-between gap-space-md mb-space-lg">
-        <div>
-            <h1 class="font-headline-xl text-headline-xl text-on-surface">Gestión de Pedidos</h1>
-            <p class="font-body-md text-on-surface-variant">Monitoreo en tiempo real y asignación de flotas urbanas</p>
-        </div>
-        <div class="flex items-center gap-space-sm">
-            <button class="bg-[#14B8A6] text-[#0F172A] px-space-md py-space-sm font-label-lg flex items-center gap-space-xs hover:opacity-90 transition-opacity"
-                    type="button" wire:click="openCreateModal">
-                <span class="material-symbols-outlined text-[18px]">add</span>
-                Nuevo Pedido
-            </button>
-        </div>
-    </div>
+    @php
+        $lowStockProducts = $products->filter(
+            fn ($product) => $product->min_stock > 0 && $product->stock < $product->min_stock,
+        );
+        $isFiltered = trim($search) !== '' || $statusFilter !== 'todos';
+        $totalOrders = array_sum($statusCounts);
+        $orderLabel = fn ($order) => '#'.str_pad((string) $order->id, 4, '0', STR_PAD_LEFT);
+        $actionOrderLabel = $actionOrder ? $orderLabel($actionOrder) : null;
+        $actionIsOffer = $actionOrder?->status === \App\Enums\OrderStatus::Offered;
+    @endphp
 
-    <!-- KPIs -->
-    <div class="grid grid-cols-1 md:grid-cols-4 gap-space-md mb-space-lg">
-        @foreach ([
-            ['Pedidos activos', $kpis['activos'], 'receipt_long'],
-            ['Pendientes', $kpis['pendientes'], 'pending_actions'],
-            ['En camino', $kpis['en_camino'], 'local_shipping'],
-            ['Entregados', $kpis['entregados'], 'task_alt'],
-        ] as [$label, $value, $icon])
-            <div class="p-space-lg bg-surface-container-lowest border border-outline-variant flex items-center justify-between">
-                <div>
-                    <div class="font-label-md text-on-surface-variant uppercase">{{ $label }}</div>
-                    <div class="font-headline-lg text-headline-lg text-on-surface font-data-mono">{{ $value }}</div>
+    <x-ui.page-header title="Gestión de Pedidos" description="Monitoreo en tiempo real y asignación de repartidores.">
+        <x-slot:actions>
+            <x-ui.button wire:click="openCreateModal">
+                <x-icon name="plus" />
+                Nuevo pedido
+            </x-ui.button>
+        </x-slot:actions>
+    </x-ui.page-header>
+
+    @if ($lowStockProducts->isNotEmpty())
+        <x-ui.alert type="warning">
+            <p>
+                Tienes <span class="font-semibold tabular-nums">{{ $lowStockProducts->count() }}</span> producto(s)
+                por debajo del stock mínimo. Reabastece para no perder ventas.
+            </p>
+
+            <x-slot:actions>
+                <a href="{{ route('owner.inventory.index') }}" wire:navigate class="font-medium underline">Ver inventario</a>
+            </x-slot:actions>
+        </x-ui.alert>
+    @endif
+
+    @if ($totalOrders === 0 && ! $isFiltered)
+        <x-ui.empty-state icon="truck" title="Aún no tienes pedidos."
+                          description="Crea el primero para empezar a asignar repartidores.">
+            <x-slot:action>
+                <x-ui.button wire:click="openCreateModal">
+                    <x-icon name="plus" />
+                    Nuevo pedido
+                </x-ui.button>
+            </x-slot:action>
+        </x-ui.empty-state>
+    @else
+        <x-ui.card padding="none">
+            <div class="px-6 pt-5">
+                <x-ui.tabs>
+                    <x-ui.tab :active="$statusFilter === 'todos'" :count="$totalOrders"
+                              wire:click="$set('statusFilter', 'todos')">Todos</x-ui.tab>
+                    <x-ui.tab :active="$statusFilter === \App\Enums\OrderStatus::Pending->value"
+                              :count="$statusCounts['pending'] ?? 0"
+                              wire:click="$set('statusFilter', 'pending')">Pendientes</x-ui.tab>
+                    <x-ui.tab :active="$statusFilter === \App\Enums\OrderStatus::Offered->value"
+                              :count="$statusCounts['offered'] ?? 0"
+                              wire:click="$set('statusFilter', 'offered')">Ofrecidos</x-ui.tab>
+                    <x-ui.tab :active="$statusFilter === \App\Enums\OrderStatus::Assigned->value"
+                              :count="$statusCounts['assigned'] ?? 0"
+                              wire:click="$set('statusFilter', 'assigned')">Asignados</x-ui.tab>
+                    <x-ui.tab :active="$statusFilter === \App\Enums\OrderStatus::InTransit->value"
+                              :count="$statusCounts['in_transit'] ?? 0"
+                              wire:click="$set('statusFilter', 'in_transit')">En camino</x-ui.tab>
+                    <x-ui.tab :active="$statusFilter === \App\Enums\OrderStatus::Delivered->value"
+                              :count="$statusCounts['delivered'] ?? 0"
+                              wire:click="$set('statusFilter', 'delivered')">Entregados</x-ui.tab>
+                    <x-ui.tab :active="$statusFilter === \App\Enums\OrderStatus::Incident->value"
+                              :count="$statusCounts['incident'] ?? 0"
+                              wire:click="$set('statusFilter', 'incident')">Incidencias</x-ui.tab>
+                </x-ui.tabs>
+            </div>
+
+            <div class="flex flex-wrap items-center justify-between gap-3 border-b border-slate-200 bg-slate-50/70 p-4">
+                <div class="relative w-full sm:max-w-md">
+                    <span class="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3 text-slate-400" aria-hidden="true">
+                        <x-icon name="magnifying-glass" />
+                    </span>
+                    <input type="search" wire:model.live.debounce.400ms="search"
+                           aria-label="Buscar por cliente, teléfono o número de pedido"
+                           placeholder="Buscar por cliente, teléfono o número de pedido…"
+                           class="h-10 w-full rounded-lg border border-slate-300 bg-white pl-10 pr-3.5 text-sm text-slate-900 placeholder:text-slate-400 focus:border-teal-600 focus:outline-none focus:ring-2 focus:ring-teal-600/20"/>
                 </div>
-                <span class="material-symbols-outlined text-[28px] text-primary">{{ $icon }}</span>
+
+                <p class="text-xs text-slate-500">
+                    <span class="font-medium tabular-nums text-slate-700">{{ $orders->total() }}</span> pedido(s)
+                </p>
             </div>
-        @endforeach
-    </div>
 
-    <!-- Filters -->
-    <div class="bg-surface-container-lowest p-space-md border border-outline-variant mb-space-md flex flex-wrap items-center justify-between gap-space-md">
-        <div class="flex items-center gap-space-sm flex-1 min-w-[280px]">
-            <span class="material-symbols-outlined text-outline">search</span>
-            <input class="w-full bg-transparent border-none text-on-surface placeholder:text-outline focus:outline-none font-body-md"
-                   placeholder="Buscar por cliente, teléfono o número de pedido..." type="text"
-                   wire:model.live.debounce.400ms="search"/>
-        </div>
-        <select class="bg-surface-container-low border border-outline-variant px-space-sm py-space-xs font-body-sm text-on-surface focus:outline-none"
-                wire:model.live="statusFilter">
-            <option value="todos">Estado: Todos</option>
-            @foreach ($statuses as $status)
-                <option value="{{ $status->value }}">{{ $status->label() }}</option>
-            @endforeach
-        </select>
-    </div>
+            <div class="overflow-x-auto">
+                <table class="min-w-full divide-y divide-slate-200">
+                    <thead class="border-b border-slate-200 bg-slate-50">
+                        <tr>
+                            <x-ui.table.th>Pedido</x-ui.table.th>
+                            <x-ui.table.th>Cliente</x-ui.table.th>
+                            <x-ui.table.th>Dirección</x-ui.table.th>
+                            <x-ui.table.th align="right">Total</x-ui.table.th>
+                            <x-ui.table.th>Repartidor</x-ui.table.th>
+                            <x-ui.table.th>Estado</x-ui.table.th>
+                            <x-ui.table.th align="right">Acción</x-ui.table.th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-slate-100">
+                        @forelse ($orders as $order)
+                            <tr wire:key="order-{{ $order->id }}"
+                                @class(['hover:bg-slate-50/70', 'bg-red-50/40' => $order->status === \App\Enums\OrderStatus::Incident])>
+                                <x-ui.table.td>
+                                    <a href="{{ route('owner.orders.show', $order) }}" wire:navigate
+                                       class="font-semibold tabular-nums text-teal-700 hover:underline">{{ $orderLabel($order) }}</a>
+                                    <p class="mt-0.5 text-xs text-slate-500">{{ format_datetime($order->created_at) }}</p>
+                                </x-ui.table.td>
 
-    <!-- Orders table -->
-    <div class="bg-surface-container-lowest border border-outline-variant overflow-x-auto">
-        <table class="w-full text-left border-collapse">
-            <thead>
-                <tr class="bg-surface-container-low border-b border-outline-variant font-label-md text-on-surface-variant uppercase">
-                    <th class="p-space-md">Pedido</th>
-                    <th class="p-space-md">Cliente</th>
-                    <th class="p-space-md">Total</th>
-                    <th class="p-space-md">Repartidor</th>
-                    <th class="p-space-md">Estado</th>
-                    <th class="p-space-md text-right">Acciones</th>
-                </tr>
-            </thead>
-            <tbody class="divide-y divide-outline-variant font-body-md">
-                @forelse ($orders as $order)
-                    @php
-                        $badge = match ($order->status) {
-                            \App\Enums\OrderStatus::Pending => 'bg-[#FEF3C7] text-[#B45309]',
-                            \App\Enums\OrderStatus::Offered => 'bg-[#DBEAFE] text-[#1D4ED8]',
-                            \App\Enums\OrderStatus::Assigned => 'bg-[#EDE9FE] text-[#6D28D9]',
-                            \App\Enums\OrderStatus::InTransit => 'bg-[#CCFBF1] text-[#0F766E]',
-                            \App\Enums\OrderStatus::Delivered => 'bg-[#DCFCE7] text-[#15803D]',
-                            \App\Enums\OrderStatus::Incident => 'bg-[#FFDAD6] text-[#93000A]',
-                            \App\Enums\OrderStatus::Cancelled => 'bg-surface-container-high text-on-surface-variant',
-                        };
-                    @endphp
-                    <tr class="hover:bg-surface-container-low/50 transition-colors" wire:key="order-{{ $order->id }}">
-                        <td class="p-space-md">
-                            <div class="font-data-mono text-on-surface">#{{ str_pad((string) $order->id, 4, '0', STR_PAD_LEFT) }}</div>
-                            <div class="font-body-sm text-on-surface-variant">{{ $order->created_at->format('d/m H:i') }}</div>
-                        </td>
-                        <td class="p-space-md">
-                            <div class="font-semibold text-on-surface">{{ $order->customer_name }}</div>
-                            <div class="font-body-sm text-on-surface-variant">{{ $order->customer_phone }}</div>
-                        </td>
-                        <td class="p-space-md font-data-mono text-on-surface">$ {{ number_format($order->total, 0, ',', '.') }}</td>
-                        <td class="p-space-md text-on-surface-variant">
-                            {{ $order->deliveryDriver?->user?->name ?? '—' }}
-                        </td>
-                        <td class="p-space-md">
-                            <span class="{{ $badge }} font-label-sm px-2 py-1 uppercase">{{ $order->status->label() }}</span>
-                        </td>
-                        <td class="p-space-md text-right">
-                            <div class="flex items-center justify-end gap-space-xs flex-wrap">
-                                <button class="p-1 hover:bg-surface-container text-on-surface-variant hover:text-on-surface" title="Detalle"
-                                        type="button" wire:click="openDetailModal({{ $order->id }})">
-                                    <span class="material-symbols-outlined text-[18px]">visibility</span>
-                                </button>
+                                <x-ui.table.td>
+                                    <p class="font-medium text-slate-900">{{ $order->customer_name }}</p>
+                                    <p class="mt-0.5 text-xs tabular-nums text-slate-500">{{ $order->customer_phone }}</p>
+                                </x-ui.table.td>
 
-                                @if ($order->status === \App\Enums\OrderStatus::Pending)
-                                    <button class="px-2 py-1 bg-[#14B8A6] text-[#0F172A] font-label-sm uppercase"
-                                            type="button" wire:click="openOfferModal({{ $order->id }})">Ofrecer</button>
-                                @endif
+                                <x-ui.table.td>
+                                    <p class="max-w-[240px] text-slate-700">{{ $order->delivery_address }}</p>
+                                </x-ui.table.td>
 
-                                @if (in_array($order->status, [\App\Enums\OrderStatus::Pending, \App\Enums\OrderStatus::Offered, \App\Enums\OrderStatus::Assigned]))
-                                    <button class="px-2 py-1 border border-error text-error font-label-sm uppercase"
-                                            type="button" wire:click="openCancelModal({{ $order->id }})">Cancelar</button>
-                                @endif
+                                <x-ui.table.td align="right">
+                                    <p class="font-semibold tabular-nums text-slate-900">{{ format_cop($order->total) }}</p>
+                                    <p class="mt-0.5 text-xs text-slate-500">{{ $order->payment_method }}</p>
+                                </x-ui.table.td>
 
-                                @if ($order->status === \App\Enums\OrderStatus::Assigned)
-                                    <button class="px-2 py-1 border border-outline-variant text-on-surface-variant font-label-sm uppercase"
-                                            type="button" wire:click="openReassignModal({{ $order->id }})">Reasignar</button>
-                                @endif
+                                <x-ui.table.td>
+                                    @if ($order->deliveryDriver?->user)
+                                        <div class="flex items-center gap-2">
+                                            <x-ui.avatar :name="$order->deliveryDriver->user->name" size="sm" />
+                                            <span>{{ $order->deliveryDriver->user->name }}</span>
+                                        </div>
+                                    @else
+                                        <span class="italic text-slate-400">Sin asignar</span>
+                                    @endif
+                                </x-ui.table.td>
 
-                                @if ($order->status === \App\Enums\OrderStatus::InTransit)
-                                    <button class="px-2 py-1 bg-[#FFDAD6] text-[#93000A] font-label-sm uppercase"
-                                            type="button" wire:click="openIncidentModal({{ $order->id }})">Incidencia</button>
-                                @endif
+                                <x-ui.table.td>
+                                    <x-ui.status-badge :status="$order->status" />
+                                </x-ui.table.td>
 
-                                @if ($order->status === \App\Enums\OrderStatus::Incident)
-                                    <button class="px-2 py-1 bg-[#CCFBF1] text-[#0F766E] font-label-sm uppercase"
-                                            type="button" wire:click="confirmDevolution({{ $order->id }})"
-                                            wire:confirm="¿Confirmas la recepción del paquete devuelto? Se reintegrará el stock.">Confirmar devolución</button>
-                                @endif
-                            </div>
-                        </td>
-                    </tr>
-                @empty
-                    <tr>
-                        <td class="p-space-lg text-center text-on-surface-variant" colspan="6">No hay pedidos que coincidan con los filtros.</td>
-                    </tr>
-                @endforelse
-            </tbody>
-        </table>
+                                <x-ui.table.td align="right">
+                                    <div class="flex items-center justify-end gap-2">
+                                        @switch($order->status)
+                                            @case(\App\Enums\OrderStatus::Pending)
+                                                <x-ui.button size="sm" wire:click="openOfferModal({{ $order->id }})">Ofrecer</x-ui.button>
+                                                @break
 
-        <div class="p-space-md bg-surface-container-low border-t border-outline-variant flex items-center justify-between font-body-sm text-on-surface-variant">
-            <span>Mostrando {{ $orders->firstItem() ?? 0 }} a {{ $orders->lastItem() ?? 0 }} de {{ $orders->total() }} pedidos</span>
-            <div class="flex items-center gap-space-xs">
-                <button class="px-space-sm py-1 border border-outline-variant bg-surface-container-lowest disabled:opacity-50"
-                        type="button" wire:click="previousPage" @disabled($orders->onFirstPage())>Anterior</button>
-                <span class="px-space-sm font-data-mono">Página {{ $orders->currentPage() }} de {{ max($orders->lastPage(), 1) }}</span>
-                <button class="px-space-sm py-1 border border-outline-variant bg-surface-container-lowest disabled:opacity-50"
-                        type="button" wire:click="nextPage" @disabled(! $orders->hasMorePages())>Siguiente</button>
+                                            @case(\App\Enums\OrderStatus::Offered)
+                                                @php
+                                                    $remaining = $order->offer_expires_at
+                                                        ? max(0, (int) now()->diffInSeconds($order->offer_expires_at, false))
+                                                        : 0;
+                                                @endphp
+                                                <span class="text-xs font-medium text-slate-600"
+                                                      x-data="{
+                                                          left: {{ $remaining }},
+                                                          timer: null,
+                                                          init() { this.timer = setInterval(() => { if (this.left > 0) this.left--; }, 1000); },
+                                                          destroy() { clearInterval(this.timer); },
+                                                      }">
+                                                    Responde en
+                                                    <span class="tabular-nums" x-text="Math.floor(left / 60) + ':' + String(left % 60).padStart(2, '0')">{{ floor($remaining / 60) }}:{{ str_pad((string) ($remaining % 60), 2, '0', STR_PAD_LEFT) }}</span>
+                                                </span>
+                                                <x-ui.button variant="secondary" size="sm"
+                                                             wire:click="openReassignModal({{ $order->id }})">Retirar</x-ui.button>
+                                                @break
+
+                                            @case(\App\Enums\OrderStatus::Assigned)
+                                            @case(\App\Enums\OrderStatus::InTransit)
+                                            @case(\App\Enums\OrderStatus::Delivered)
+                                                <x-ui.button variant="secondary" size="sm"
+                                                             wire:click="openDetailModal({{ $order->id }})">Ver detalle</x-ui.button>
+                                                @break
+
+                                            @case(\App\Enums\OrderStatus::Cancelled)
+                                                <span class="text-xs italic text-slate-400">{{ $order->cancel_reason ?: 'Sin motivo registrado' }}</span>
+                                                @break
+
+                                            @case(\App\Enums\OrderStatus::Incident)
+                                                <x-ui.button size="sm" wire:click="confirmDevolution({{ $order->id }})"
+                                                             wire:confirm="¿Confirmas la recepción del paquete devuelto? Se reintegrará el stock.">
+                                                    Confirmar devolución
+                                                </x-ui.button>
+                                                @break
+                                        @endswitch
+                                    </div>
+                                </x-ui.table.td>
+                            </tr>
+                        @empty
+                            <tr>
+                                <td colspan="7" class="px-4 py-14 text-center text-sm text-slate-500">
+                                    No hay pedidos que coincidan con los filtros.
+                                </td>
+                            </tr>
+                        @endforelse
+                    </tbody>
+                </table>
             </div>
-        </div>
-    </div>
+
+            {{ $orders->links('partials.pagination') }}
+        </x-ui.card>
+    @endif
 
     <!-- MODAL: Crear pedido -->
     @if ($showCreateModal)
-        <div class="fixed inset-0 bg-[#0B1C30]/60 backdrop-blur-sm z-50 flex items-center justify-center p-space-md" role="dialog" aria-modal="true">
-            <div class="bg-surface-container-lowest border border-outline-variant w-full max-w-3xl shadow-2xl overflow-hidden flex flex-col max-h-[90vh]">
-                <div class="bg-surface-container-low px-space-lg py-space-md border-b border-outline-variant flex items-center justify-between">
-                    <div class="flex items-center gap-space-sm">
-                        <span class="material-symbols-outlined text-primary">add_box</span>
-                        <h3 class="font-headline-sm text-headline-sm text-on-surface">Nuevo Pedido</h3>
+        <x-ui.modal property="showCreateModal" title="Nuevo pedido" subtitle="Al crear el pedido se reserva el stock.">
+            <form id="order-create-form" wire:submit="createOrder" class="space-y-5">
+                <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                    <x-ui.input name="customer_name" label="Cliente" required wire:model="customer_name" />
+                    <x-ui.input name="customer_phone" label="Teléfono" type="tel" required wire:model="customer_phone" />
+
+                    <div class="sm:col-span-2">
+                        <x-ui.input name="delivery_address" label="Dirección de entrega" required wire:model="delivery_address" />
                     </div>
-                    <button class="text-on-surface-variant hover:text-on-surface" type="button" wire:click="$set('showCreateModal', false)">
-                        <span class="material-symbols-outlined">close</span>
-                    </button>
+
+                    <x-ui.select name="payment_method" label="Método de pago" required wire:model="payment_method">
+                        <option>Contra Entrega (Efectivo)</option>
+                        <option>Nequi / Daviplata</option>
+                        <option>Transferencia Bancaria</option>
+                    </x-ui.select>
+
+                    <div class="flex items-end pb-2.5">
+                        <x-ui.checkbox name="requires_traceability" label="Requiere trazabilidad (paquete)"
+                                       wire:model="requires_traceability" />
+                    </div>
                 </div>
-                <form class="p-space-lg space-y-space-md overflow-y-auto" wire:submit="createOrder">
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-space-md">
-                        <div class="flex flex-col gap-space-xs">
-                            <label class="font-label-md text-on-surface-variant uppercase">Cliente *</label>
-                            <input class="bg-surface border border-outline-variant px-space-sm py-space-xs text-on-surface font-body-md focus:outline-none focus:border-on-surface"
-                                   type="text" wire:model="customer_name"/>
-                            @error('customer_name') <span class="font-body-sm text-error">{{ $message }}</span> @enderror
-                        </div>
-                        <div class="flex flex-col gap-space-xs">
-                            <label class="font-label-md text-on-surface-variant uppercase">Teléfono *</label>
-                            <input class="bg-surface border border-outline-variant px-space-sm py-space-xs text-on-surface font-data-mono focus:outline-none focus:border-on-surface"
-                                   type="text" wire:model="customer_phone"/>
-                            @error('customer_phone') <span class="font-body-sm text-error">{{ $message }}</span> @enderror
-                        </div>
-                        <div class="flex flex-col gap-space-xs md:col-span-2">
-                            <label class="font-label-md text-on-surface-variant uppercase">Dirección de entrega *</label>
-                            <input class="bg-surface border border-outline-variant px-space-sm py-space-xs text-on-surface font-body-md focus:outline-none focus:border-on-surface"
-                                   type="text" wire:model="delivery_address"/>
-                            @error('delivery_address') <span class="font-body-sm text-error">{{ $message }}</span> @enderror
-                        </div>
-                        <div class="flex flex-col gap-space-xs">
-                            <label class="font-label-md text-on-surface-variant uppercase">Método de pago *</label>
-                            <select class="bg-surface border border-outline-variant px-space-sm py-space-xs text-on-surface font-body-md focus:outline-none focus:border-on-surface"
-                                    wire:model="payment_method">
-                                <option>Contra Entrega (Efectivo)</option>
-                                <option>Nequi / Daviplata</option>
-                                <option>Transferencia Bancaria</option>
-                            </select>
-                            @error('payment_method') <span class="font-body-sm text-error">{{ $message }}</span> @enderror
-                        </div>
-                        <label class="flex items-center gap-space-sm cursor-pointer mt-6">
-                            <input class="w-4 h-4" type="checkbox" wire:model="requires_traceability"/>
-                            <span class="font-body-md text-on-surface">Requiere trazabilidad (paquete)</span>
-                        </label>
+
+                <div class="space-y-3 border-t border-slate-200 pt-5">
+                    <div class="flex items-center justify-between">
+                        <h3 class="text-sm font-semibold text-slate-900">Productos</h3>
+                        <x-ui.button variant="ghost" size="sm" wire:click="addLine">
+                            <x-icon name="plus" class="h-4 w-4" />
+                            Agregar producto
+                        </x-ui.button>
                     </div>
 
-                    <div class="border-t border-outline-variant pt-space-md">
-                        <div class="flex items-center justify-between mb-space-sm">
-                            <span class="font-label-md text-on-surface-variant uppercase">Productos</span>
-                            <button class="text-primary font-label-md uppercase flex items-center gap-1" type="button" wire:click="addLine">
-                                <span class="material-symbols-outlined text-[16px]">add</span> Agregar
-                            </button>
-                        </div>
-                        @error('lines') <div class="font-body-sm text-error mb-space-xs">{{ $message }}</div> @enderror
+                    @error('lines')
+                        <x-ui.alert type="error">{{ $message }}</x-ui.alert>
+                    @enderror
 
-                        @foreach ($lines as $index => $line)
-                            <div class="flex items-center gap-space-sm mb-space-xs" wire:key="line-{{ $index }}">
-                                <select class="flex-1 bg-surface border border-outline-variant px-space-sm py-space-xs text-on-surface font-body-md focus:outline-none focus:border-on-surface"
-                                        wire:model="lines.{{ $index }}.product_id">
-                                    <option value="">Seleccione un producto...</option>
+                    @foreach ($lines as $index => $line)
+                        <div wire:key="line-{{ $index }}" class="flex items-start gap-3">
+                            <div class="min-w-0 flex-1">
+                                <x-ui.select name="lines.{{ $index }}.product_id" aria-label="Producto {{ $index + 1 }}"
+                                             wire:model="lines.{{ $index }}.product_id">
+                                    <option value="">Seleccione un producto…</option>
                                     @foreach ($products as $product)
-                                        <option value="{{ $product->id }}">{{ $product->name }} (stock: {{ $product->stock }})</option>
+                                        <option value="{{ $product->id }}">
+                                            {{ $product->name }} — {{ format_cop($product->price) }} · stock: {{ $product->stock }}
+                                        </option>
                                     @endforeach
-                                </select>
-                                <input class="w-24 bg-surface border border-outline-variant px-space-sm py-space-xs text-on-surface font-data-mono focus:outline-none focus:border-on-surface"
-                                       type="number" min="1" wire:model="lines.{{ $index }}.quantity"/>
-                                <button class="text-error p-1" type="button" wire:click="removeLine({{ $index }})">
-                                    <span class="material-symbols-outlined text-[18px]">delete</span>
-                                </button>
+                                </x-ui.select>
                             </div>
-                            @error("lines.{$index}.product_id") <div class="font-body-sm text-error mb-space-xs">{{ $message }}</div> @enderror
-                            @error("lines.{$index}.quantity") <div class="font-body-sm text-error mb-space-xs">{{ $message }}</div> @enderror
-                        @endforeach
-                    </div>
 
-                    <div class="pt-space-md border-t border-outline-variant flex items-center justify-end gap-space-sm">
-                        <button class="bg-surface border border-outline-variant px-space-md py-space-sm font-label-lg text-on-surface hover:bg-surface-container"
-                                type="button" wire:click="$set('showCreateModal', false)">Cancelar</button>
-                        <button class="bg-[#14B8A6] text-[#0F172A] px-space-lg py-space-sm font-label-lg hover:opacity-90" type="submit">
-                            Crear pedido y reservar stock
-                        </button>
-                    </div>
-                </form>
-            </div>
-        </div>
+                            <div class="w-24">
+                                <x-ui.input name="lines.{{ $index }}.quantity" type="number" min="1"
+                                            aria-label="Cantidad {{ $index + 1 }}" wire:model="lines.{{ $index }}.quantity" />
+                            </div>
+
+                            <div class="w-10">
+                                <x-ui.button variant="ghost" size="sm" class="w-10"
+                                             wire:click="removeLine({{ $index }})"
+                                             aria-label="Quitar producto {{ $index + 1 }}">
+                                    <x-icon name="trash" class="h-4 w-4" />
+                                </x-ui.button>
+                            </div>
+                        </div>
+                    @endforeach
+                </div>
+            </form>
+
+            <x-slot:footer>
+                <x-ui.button variant="secondary" @click="$wire.set('showCreateModal', false)">Cancelar</x-ui.button>
+                <x-ui.button type="submit" form="order-create-form">Crear pedido y reservar stock</x-ui.button>
+            </x-slot:footer>
+        </x-ui.modal>
     @endif
 
     <!-- MODAL: Ofrecer pedido -->
     @if ($showOfferModal)
-        <div class="fixed inset-0 bg-[#0B1C30]/60 backdrop-blur-sm z-50 flex items-center justify-center p-space-md" role="dialog" aria-modal="true">
-            <div class="bg-surface-container-lowest border border-outline-variant w-full max-w-xl shadow-2xl overflow-hidden">
-                <div class="bg-surface-container-low px-space-lg py-space-md border-b border-outline-variant flex items-center justify-between">
-                    <h3 class="font-headline-sm text-headline-sm text-on-surface">Ofrecer Pedido</h3>
-                    <button class="text-on-surface-variant hover:text-on-surface" type="button" wire:click="$set('showOfferModal', false)">
-                        <span class="material-symbols-outlined">close</span>
-                    </button>
-                </div>
-                <div class="p-space-lg space-y-space-sm">
-                    <p class="font-body-md text-on-surface-variant">Selecciona un repartidor disponible. La oferta expira en 90 segundos.</p>
-                    @error('offer') <div class="font-body-sm text-error">{{ $message }}</div> @enderror
+        <x-ui.modal property="showOfferModal" title="Ofrecer pedido {{ $actionOrderLabel ?? '' }}"
+                    subtitle="El repartidor tiene 90 segundos para aceptar.">
+            @error('offer')
+                <x-ui.alert type="error">{{ $message }}</x-ui.alert>
+            @enderror
 
-                    @forelse ($candidates as $driver)
-                        <div class="flex items-center justify-between border border-outline-variant p-space-sm" wire:key="cand-{{ $driver->id }}">
-                            <div>
-                                <div class="font-semibold text-on-surface">{{ $driver->user?->name }}</div>
-                                <div class="font-body-sm text-on-surface-variant">
-                                    {{ $driver->active_orders_count }} de {{ $driver->max_active_orders }} pedidos activos
-                                </div>
-                            </div>
-                            <button class="bg-[#14B8A6] text-[#0F172A] px-space-md py-space-xs font-label-md uppercase"
-                                    type="button" wire:click="offerToDriver({{ $driver->id }})">Ofrecer</button>
-                        </div>
-                    @empty
-                        <div class="text-on-surface-variant font-body-md p-space-md border border-dashed border-outline-variant text-center">
-                            No hay repartidores con capacidad disponible en este momento.
-                        </div>
-                    @endforelse
-                </div>
-            </div>
-        </div>
-    @endif
-
-    <!-- MODAL: Cancelar -->
-    @if ($showCancelModal)
-        <div class="fixed inset-0 bg-[#0B1C30]/60 backdrop-blur-sm z-50 flex items-center justify-center p-space-md" role="dialog" aria-modal="true">
-            <div class="bg-surface-container-lowest border border-outline-variant w-full max-w-lg shadow-2xl overflow-hidden">
-                <div class="bg-surface-container-low px-space-lg py-space-md border-b border-outline-variant flex items-center justify-between">
-                    <h3 class="font-headline-sm text-headline-sm text-on-surface">Cancelar Pedido</h3>
-                    <button class="text-on-surface-variant hover:text-on-surface" type="button" wire:click="$set('showCancelModal', false)">
-                        <span class="material-symbols-outlined">close</span>
-                    </button>
-                </div>
-                <form class="p-space-lg space-y-space-md" wire:submit="cancelOrder">
-                    <p class="font-body-md text-on-surface-variant">Al cancelar se libera la reserva de stock. Si el pedido está asignado el motivo es obligatorio.</p>
-                    <div class="flex flex-col gap-space-xs">
-                        <label class="font-label-md text-on-surface-variant uppercase">Motivo</label>
-                        <textarea class="bg-surface border border-outline-variant px-space-sm py-space-xs text-on-surface font-body-md focus:outline-none focus:border-on-surface"
-                                  rows="3" wire:model="cancel_reason"></textarea>
-                        @error('cancel_reason') <span class="font-body-sm text-error">{{ $message }}</span> @enderror
-                    </div>
-                    <div class="flex items-center justify-end gap-space-sm">
-                        <button class="bg-surface border border-outline-variant px-space-md py-space-sm font-label-lg text-on-surface"
-                                type="button" wire:click="$set('showCancelModal', false)">Volver</button>
-                        <button class="bg-error text-on-error px-space-lg py-space-sm font-label-lg" type="submit">Confirmar cancelación</button>
-                    </div>
-                </form>
-            </div>
-        </div>
-    @endif
-
-    <!-- MODAL: Reasignar -->
-    @if ($showReassignModal)
-        <div class="fixed inset-0 bg-[#0B1C30]/60 backdrop-blur-sm z-50 flex items-center justify-center p-space-md" role="dialog" aria-modal="true">
-            <div class="bg-surface-container-lowest border border-outline-variant w-full max-w-lg shadow-2xl overflow-hidden">
-                <div class="bg-surface-container-low px-space-lg py-space-md border-b border-outline-variant flex items-center justify-between">
-                    <h3 class="font-headline-sm text-headline-sm text-on-surface">Reasignar Pedido</h3>
-                    <button class="text-on-surface-variant hover:text-on-surface" type="button" wire:click="$set('showReassignModal', false)">
-                        <span class="material-symbols-outlined">close</span>
-                    </button>
-                </div>
-                <form class="p-space-lg space-y-space-md" wire:submit="reassign">
-                    <p class="font-body-md text-on-surface-variant">El pedido vuelve a pendiente y el repartidor deja de verlo. El motivo es obligatorio.</p>
-                    <div class="flex flex-col gap-space-xs">
-                        <label class="font-label-md text-on-surface-variant uppercase">Motivo</label>
-                        <textarea class="bg-surface border border-outline-variant px-space-sm py-space-xs text-on-surface font-body-md focus:outline-none focus:border-on-surface"
-                                  rows="3" wire:model="reassign_reason"></textarea>
-                        @error('reassign_reason') <span class="font-body-sm text-error">{{ $message }}</span> @enderror
-                    </div>
-                    <div class="flex items-center justify-end gap-space-sm">
-                        <button class="bg-surface border border-outline-variant px-space-md py-space-sm font-label-lg text-on-surface"
-                                type="button" wire:click="$set('showReassignModal', false)">Volver</button>
-                        <button class="bg-[#14B8A6] text-[#0F172A] px-space-lg py-space-sm font-label-lg" type="submit">Reasignar</button>
-                    </div>
-                </form>
-            </div>
-        </div>
-    @endif
-
-    <!-- MODAL: Incidencia -->
-    @if ($showIncidentModal)
-        <div class="fixed inset-0 bg-[#0B1C30]/60 backdrop-blur-sm z-50 flex items-center justify-center p-space-md" role="dialog" aria-modal="true">
-            <div class="bg-surface-container-lowest border border-outline-variant w-full max-w-lg shadow-2xl overflow-hidden">
-                <div class="bg-surface-container-low px-space-lg py-space-md border-b border-outline-variant flex items-center justify-between">
-                    <h3 class="font-headline-sm text-headline-sm text-on-surface">Registrar Incidencia</h3>
-                    <button class="text-on-surface-variant hover:text-on-surface" type="button" wire:click="$set('showIncidentModal', false)">
-                        <span class="material-symbols-outlined">close</span>
-                    </button>
-                </div>
-                <form class="p-space-lg space-y-space-md" wire:submit="registerIncident">
-                    <p class="font-body-md text-on-surface-variant">El stock se reintegra solo cuando confirmes la devolución del paquete.</p>
-                    <div class="flex flex-col gap-space-xs">
-                        <label class="font-label-md text-on-surface-variant uppercase">Motivo</label>
-                        <textarea class="bg-surface border border-outline-variant px-space-sm py-space-xs text-on-surface font-body-md focus:outline-none focus:border-on-surface"
-                                  rows="3" wire:model="incident_reason"></textarea>
-                        @error('incident_reason') <span class="font-body-sm text-error">{{ $message }}</span> @enderror
-                    </div>
-                    <div class="flex items-center justify-end gap-space-sm">
-                        <button class="bg-surface border border-outline-variant px-space-md py-space-sm font-label-lg text-on-surface"
-                                type="button" wire:click="$set('showIncidentModal', false)">Volver</button>
-                        <button class="bg-[#FFDAD6] text-[#93000A] px-space-lg py-space-sm font-label-lg" type="submit">Registrar incidencia</button>
-                    </div>
-                </form>
-            </div>
-        </div>
-    @endif
-
-    <!-- MODAL: Detalle + timeline -->
-    @if ($showDetailModal && $detail)
-        <div class="fixed inset-0 bg-[#0B1C30]/60 backdrop-blur-sm z-50 flex items-center justify-center p-space-md" role="dialog" aria-modal="true">
-            <div class="bg-surface-container-lowest border border-outline-variant w-full max-w-2xl shadow-2xl overflow-hidden max-h-[90vh] flex flex-col">
-                <div class="bg-surface-container-low px-space-lg py-space-md border-b border-outline-variant flex items-center justify-between">
-                    <h3 class="font-headline-sm text-headline-sm text-on-surface">
-                        Pedido #{{ str_pad((string) $detail->id, 4, '0', STR_PAD_LEFT) }} · {{ $detail->customer_name }}
-                    </h3>
-                    <button class="text-on-surface-variant hover:text-on-surface" type="button" wire:click="$set('showDetailModal', false)">
-                        <span class="material-symbols-outlined">close</span>
-                    </button>
-                </div>
-                <div class="p-space-lg space-y-space-md overflow-y-auto">
-                    <div class="grid grid-cols-2 gap-space-md font-body-md">
-                        <div><span class="text-on-surface-variant">Teléfono:</span> {{ $detail->customer_phone }}</div>
-                        <div><span class="text-on-surface-variant">Estado:</span> {{ $detail->status->label() }}</div>
-                        <div class="col-span-2"><span class="text-on-surface-variant">Dirección:</span> {{ $detail->delivery_address }}</div>
-                        <div><span class="text-on-surface-variant">Pago:</span> {{ $detail->payment_method }}</div>
-                        <div><span class="text-on-surface-variant">Total:</span> $ {{ number_format($detail->total, 0, ',', '.') }}</div>
-                    </div>
-
-                    <div>
-                        <div class="font-label-md text-on-surface-variant uppercase mb-space-xs">Productos</div>
-                        <ul class="divide-y divide-outline-variant border border-outline-variant">
-                            @foreach ($detail->items as $item)
-                                <li class="flex items-center justify-between p-space-sm font-body-md">
-                                    <span>{{ $item->quantity }} × {{ $item->product?->name }}</span>
-                                    <span class="font-data-mono">$ {{ number_format($item->subtotal, 0, ',', '.') }}</span>
-                                </li>
-                            @endforeach
-                        </ul>
-                    </div>
-
-                    <div>
-                        <div class="font-label-md text-on-surface-variant uppercase mb-space-xs">Trazabilidad</div>
-                        @if ($detail->requires_traceability && $detail->package)
-                            <div class="font-body-sm text-on-surface-variant mb-space-xs">Guía: {{ $detail->package->tracking_code }} · {{ $detail->package->status->label() }}</div>
-                            <ol class="border-l-2 border-outline-variant pl-space-md space-y-space-sm">
-                                @forelse ($detail->package->scans as $scan)
-                                    <li class="font-body-sm">
-                                        <span class="font-label-sm uppercase text-primary">{{ $scan->type->label() }}</span>
-                                        · {{ $scan->scanned_at?->format('d/m/Y H:i') }}
-                                    </li>
-                                @empty
-                                    <li class="font-body-sm text-on-surface-variant">Sin escaneos registrados.</li>
-                                @endforelse
-                            </ol>
-                        @else
-                            <div class="font-body-sm text-on-surface-variant">Este pedido no requiere trazabilidad de paquete.</div>
+            @if ($actionOrder)
+                <div class="space-y-1.5 rounded-xl border border-slate-200 bg-slate-50 p-4 text-sm">
+                    <p class="font-medium text-slate-900">{{ $actionOrder->customer_name }}</p>
+                    <p class="max-w-[420px] text-slate-600">{{ $actionOrder->delivery_address }}</p>
+                    <div class="flex flex-wrap items-center gap-2 pt-0.5">
+                        <span class="font-semibold tabular-nums text-slate-900">{{ format_cop($actionOrder->total) }}</span>
+                        <span class="text-slate-400" aria-hidden="true">·</span>
+                        <span class="text-slate-600">{{ $actionOrder->payment_method }}</span>
+                        @if ($actionOrder->requires_traceability)
+                            <x-ui.badge color="blue">Con trazabilidad</x-ui.badge>
                         @endif
                     </div>
-
-                    <div>
-                        <div class="font-label-md text-on-surface-variant uppercase mb-space-xs">Historial de estados</div>
-                        <ol class="border-l-2 border-outline-variant pl-space-md space-y-space-sm">
-                            @forelse ($detail->statusLogs->sortBy('created_at') as $log)
-                                <li class="font-body-sm">
-                                    <span class="font-label-sm uppercase">{{ $log->from }} → {{ $log->to }}</span>
-                                    <span class="text-on-surface-variant">· {{ $log->created_at->format('d/m H:i') }}</span>
-                                    @if ($log->reason) <div class="text-on-surface-variant">{{ $log->reason }}</div> @endif
-                                </li>
-                            @empty
-                                <li class="font-body-sm text-on-surface-variant">Sin transiciones registradas.</li>
-                            @endforelse
-                        </ol>
-                    </div>
                 </div>
+            @endif
+
+            <div class="space-y-3">
+                @forelse ($candidates as $driver)
+                    <div wire:key="candidate-{{ $driver->id }}"
+                         class="flex items-center justify-between gap-4 rounded-xl border border-slate-200 p-4">
+                        <div class="flex min-w-0 items-center gap-3">
+                            <x-ui.avatar :name="$driver->user?->name ?? ''" />
+
+                            <div class="min-w-0 space-y-1.5">
+                                <div class="flex flex-wrap items-center gap-2">
+                                    <span class="text-sm font-medium text-slate-900">{{ $driver->user?->name }}</span>
+                                    <x-ui.availability-badge :availability="$driver->availability" />
+                                </div>
+
+                                <x-ui.capacity-bar :active="$driver->active_orders_count" :max="$driver->max_active_orders"
+                                                   :label="$driver->active_orders_count.'/'.$driver->max_active_orders.' pedidos activos (incluye ofertas pendientes)'" />
+                            </div>
+                        </div>
+
+                        <x-ui.button size="sm" wire:click="offerToDriver({{ $driver->id }})">Ofrecer</x-ui.button>
+                    </div>
+                @empty
+                    <x-ui.empty-state icon="users" title="No hay repartidores disponibles."
+                                      description="Todos están desconectados o con la capacidad completa." />
+                @endforelse
             </div>
-        </div>
+        </x-ui.modal>
+    @endif
+
+    <!-- DRAWER: Detalle del pedido -->
+    @if ($showDetailModal && $detail)
+        <x-ui.drawer property="showDetailModal" title="Pedido {{ $orderLabel($detail) }}" size="md">
+            <x-slot:meta>
+                <x-ui.status-badge :status="$detail->status" />
+                <span class="text-xs text-slate-500">{{ format_datetime($detail->created_at) }}</span>
+            </x-slot:meta>
+
+            <section class="rounded-xl border border-slate-200 bg-white p-4">
+                <h3 class="text-sm font-semibold text-slate-900">Cliente</h3>
+
+                <dl class="mt-2.5 space-y-2 text-sm">
+                    <div class="flex items-start justify-between gap-4">
+                        <dt class="text-slate-500">Nombre</dt>
+                        <dd class="text-right font-medium text-slate-900">{{ $detail->customer_name }}</dd>
+                    </div>
+                    <div class="flex items-start justify-between gap-4">
+                        <dt class="text-slate-500">Teléfono</dt>
+                        <dd class="text-right tabular-nums text-slate-900">{{ $detail->customer_phone }}</dd>
+                    </div>
+                    <div class="flex items-start justify-between gap-4">
+                        <dt class="text-slate-500">Dirección</dt>
+                        <dd class="max-w-[65%] text-right text-slate-900">{{ $detail->delivery_address }}</dd>
+                    </div>
+                    <div class="flex items-start justify-between gap-4">
+                        <dt class="text-slate-500">Pago</dt>
+                        <dd class="text-right text-slate-900">{{ $detail->payment_method }}</dd>
+                    </div>
+                </dl>
+            </section>
+
+            <section class="rounded-xl border border-slate-200 bg-white p-4">
+                <div class="flex items-center justify-between gap-4">
+                    <h3 class="text-sm font-semibold text-slate-900">Productos</h3>
+                    <span class="text-sm font-semibold tabular-nums text-slate-900">{{ format_cop($detail->total) }}</span>
+                </div>
+
+                <ul class="mt-2 divide-y divide-slate-100">
+                    @foreach ($detail->items as $item)
+                        <li class="flex items-center justify-between gap-4 py-2 text-sm">
+                            <span class="text-slate-700">
+                                <span class="tabular-nums">{{ $item->quantity }}</span> ×
+                                {{ $item->product?->name ?? 'Producto no disponible' }}
+                            </span>
+                            <span class="shrink-0 tabular-nums text-slate-900">{{ format_cop($item->subtotal) }}</span>
+                        </li>
+                    @endforeach
+                </ul>
+            </section>
+
+            <section class="rounded-xl border border-slate-200 bg-white p-4">
+                <h3 class="text-sm font-semibold text-slate-900">Repartidor asignado</h3>
+
+                @if ($detail->deliveryDriver?->user)
+                    <div class="mt-2.5 flex items-center gap-3">
+                        <x-ui.avatar :name="$detail->deliveryDriver->user->name" />
+                        <div>
+                            <p class="text-sm font-medium text-slate-900">{{ $detail->deliveryDriver->user->name }}</p>
+                            <div class="mt-1">
+                                <x-ui.availability-badge :availability="$detail->deliveryDriver->availability" />
+                            </div>
+                        </div>
+                    </div>
+                @else
+                    <p class="mt-2 text-sm italic text-slate-400">Sin asignar</p>
+                @endif
+            </section>
+
+            <section class="rounded-xl border border-slate-200 bg-white p-4">
+                <h3 class="text-sm font-semibold text-slate-900">Trazabilidad</h3>
+
+                @if ($detail->requires_traceability && $detail->package)
+                    <p class="mt-1.5 text-xs text-slate-500">
+                        Guía <span class="font-medium tabular-nums text-slate-700">{{ $detail->package->tracking_code }}</span>
+                        · {{ $detail->package->status->label() }}
+                    </p>
+
+                    <ol class="mt-3 space-y-3 border-l border-slate-200 pl-4">
+                        @forelse ($detail->package->scans as $scan)
+                            <li class="relative">
+                                <span class="absolute -left-5 top-1.5 h-2 w-2 rounded-full bg-teal-600" aria-hidden="true"></span>
+                                <p class="text-sm font-medium text-slate-900">{{ $scan->type->label() }}</p>
+                                <p class="text-xs text-slate-500">{{ format_datetime($scan->scanned_at) }}</p>
+                            </li>
+                        @empty
+                            <li class="text-sm text-slate-500">Sin escaneos registrados.</li>
+                        @endforelse
+                    </ol>
+                @else
+                    <p class="mt-1.5 text-sm text-slate-500">Este pedido no tiene trazabilidad.</p>
+                @endif
+            </section>
+
+            <section class="rounded-xl border border-slate-200 bg-white p-4">
+                <h3 class="text-sm font-semibold text-slate-900">Historial de estados</h3>
+
+                <ol class="mt-3 space-y-3 border-l border-slate-200 pl-4">
+                    @forelse ($detail->statusLogs->sortBy('created_at') as $log)
+                        <li class="relative">
+                            <span class="absolute -left-5 top-1.5 h-2 w-2 rounded-full bg-teal-600" aria-hidden="true"></span>
+                            <p class="text-sm font-medium text-slate-900">
+                                {{ \App\Enums\OrderStatus::tryFrom($log->from)?->label() ?? $log->from }}
+                                <span class="text-slate-400" aria-hidden="true">→</span>
+                                {{ \App\Enums\OrderStatus::tryFrom($log->to)?->label() ?? $log->to }}
+                            </p>
+                            <p class="text-xs text-slate-500">
+                                {{ format_datetime($log->created_at) }} · {{ $log->user?->name ?? 'Sistema' }}
+                            </p>
+                            @if ($log->reason)
+                                <p class="mt-0.5 text-xs text-slate-500">{{ $log->reason }}</p>
+                            @endif
+                        </li>
+                    @empty
+                        <li class="text-sm text-slate-500">Sin transiciones registradas.</li>
+                    @endforelse
+                </ol>
+            </section>
+
+            <x-slot:footer>
+                <x-ui.button variant="secondary" @click="$wire.set('showDetailModal', false)">Cerrar</x-ui.button>
+
+                @if ($detail->canBeCancelled())
+                    <x-ui.button variant="danger" wire:click="openCancelModal({{ $detail->id }})">Cancelar pedido</x-ui.button>
+                @endif
+
+                @if ($detail->status === \App\Enums\OrderStatus::Assigned)
+                    <x-ui.button variant="secondary" wire:click="openReassignModal({{ $detail->id }})">Reasignar</x-ui.button>
+                @endif
+
+                @if ($detail->status === \App\Enums\OrderStatus::InTransit)
+                    <x-ui.button variant="danger" wire:click="openIncidentModal({{ $detail->id }})">Registrar incidencia</x-ui.button>
+                @endif
+
+                @if ($detail->status === \App\Enums\OrderStatus::Incident)
+                    <x-ui.button wire:click="confirmDevolution({{ $detail->id }})"
+                                 wire:confirm="¿Confirmas la recepción del paquete devuelto? Se reintegrará el stock.">
+                        Confirmar devolución
+                    </x-ui.button>
+                @endif
+            </x-slot:footer>
+        </x-ui.drawer>
+    @endif
+
+    <!-- MODAL: Cancelar pedido -->
+    @if ($showCancelModal)
+        <x-ui.modal property="showCancelModal" title="Cancelar pedido"
+                    :subtitle="$actionOrderLabel ? $actionOrderLabel.' · '.$actionOrder->customer_name : null">
+            <form id="order-cancel-form" wire:submit="cancelOrder" class="space-y-4">
+                <x-ui.alert type="warning">
+                    Al cancelar se libera la reserva de stock. Si el pedido está asignado, el motivo es obligatorio.
+                </x-ui.alert>
+
+                <x-ui.textarea name="cancel_reason" label="Motivo" rows="3" wire:model="cancel_reason"
+                               help="Queda registrado en el historial del pedido." />
+            </form>
+
+            <x-slot:footer>
+                <x-ui.button variant="secondary" @click="$wire.set('showCancelModal', false)">Volver</x-ui.button>
+                <x-ui.button variant="danger-solid" type="submit" form="order-cancel-form">Confirmar cancelación</x-ui.button>
+            </x-slot:footer>
+        </x-ui.modal>
+    @endif
+
+    <!-- MODAL: Reasignar / retirar oferta -->
+    @if ($showReassignModal)
+        <x-ui.modal property="showReassignModal" :title="$actionIsOffer ? 'Retirar oferta' : 'Reasignar pedido'"
+                    :subtitle="$actionOrderLabel ? $actionOrderLabel.' · '.$actionOrder->customer_name : null">
+            <form id="order-reassign-form" wire:submit="reassign" class="space-y-4">
+                <x-ui.alert type="warning">
+                    {{ $actionIsOffer
+                        ? 'El pedido vuelve a pendiente y el repartidor deja de ver la oferta.'
+                        : 'El pedido vuelve a pendiente y el repartidor deja de verlo.' }}
+                    El motivo es obligatorio.
+                </x-ui.alert>
+
+                <x-ui.textarea name="reassign_reason" label="Motivo" rows="3" wire:model="reassign_reason" />
+            </form>
+
+            <x-slot:footer>
+                <x-ui.button variant="secondary" @click="$wire.set('showReassignModal', false)">Volver</x-ui.button>
+                <x-ui.button type="submit" form="order-reassign-form">{{ $actionIsOffer ? 'Retirar oferta' : 'Reasignar' }}</x-ui.button>
+            </x-slot:footer>
+        </x-ui.modal>
+    @endif
+
+    <!-- MODAL: Registrar incidencia -->
+    @if ($showIncidentModal)
+        <x-ui.modal property="showIncidentModal" title="Registrar incidencia"
+                    :subtitle="$actionOrderLabel ? $actionOrderLabel.' · '.$actionOrder->customer_name : null">
+            <form id="order-incident-form" wire:submit="registerIncident" class="space-y-4">
+                <x-ui.alert type="warning">
+                    El stock se reintegra solo cuando confirmes la devolución del paquete.
+                </x-ui.alert>
+
+                <x-ui.textarea name="incident_reason" label="Motivo" rows="3" wire:model="incident_reason" />
+            </form>
+
+            <x-slot:footer>
+                <x-ui.button variant="secondary" @click="$wire.set('showIncidentModal', false)">Volver</x-ui.button>
+                <x-ui.button variant="danger-solid" type="submit" form="order-incident-form">Registrar incidencia</x-ui.button>
+            </x-slot:footer>
+        </x-ui.modal>
     @endif
 </div>

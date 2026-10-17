@@ -329,6 +329,22 @@ class Orders extends Component
             ? app(DriverAvailabilityService::class)->candidates(auth()->user()->business_id)
             : collect();
 
+        $statusCounts = Order::query()
+            ->selectRaw('status, count(*) as aggregate')
+            ->groupBy('status')
+            ->pluck('aggregate', 'status');
+
+        $actionModalOpen = $this->showOfferModal
+            || $this->showCancelModal
+            || $this->showReassignModal
+            || $this->showIncidentModal;
+
+        $actionOrderId = $this->offerOrderId ?? $this->cancelOrderId ?? $this->reassignOrderId ?? $this->incidentOrderId;
+
+        $actionOrder = $actionModalOpen && $actionOrderId !== null
+            ? Order::find($actionOrderId)
+            : null;
+
         return view('livewire.owner.orders', [
             'orders' => $orders,
             'kpis' => $kpis,
@@ -336,6 +352,8 @@ class Orders extends Component
             'detail' => $detail,
             'candidates' => $candidates,
             'statuses' => OrderStatus::cases(),
+            'statusCounts' => $statusCounts->all(),
+            'actionOrder' => $actionOrder,
         ]);
     }
 }
