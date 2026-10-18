@@ -1,238 +1,162 @@
-<div class="flex flex-col w-full pb-16">
-    @if (session('success'))
-        <div class="w-full bg-primary-fixed text-on-primary-fixed px-space-lg py-space-sm flex items-center gap-space-sm mb-space-md">
-            <span class="material-symbols-outlined text-[20px]">check_circle</span>
-            <span class="font-body-md text-body-md">{{ session('success') }}</span>
-        </div>
-    @endif
-
-    @if (session('error'))
-        <div class="w-full bg-error-container text-on-error-container px-space-lg py-space-sm flex items-center gap-space-sm mb-space-md">
-            <span class="material-symbols-outlined text-[20px]">error</span>
-            <span class="font-body-md text-body-md">{{ session('error') }}</span>
-        </div>
-    @endif
+﻿<div class="space-y-6">
+    <x-ui.toast />
 
     @error('delete')
-        <div class="w-full bg-error-container text-on-error-container px-space-lg py-space-sm flex items-center gap-space-sm mb-space-md">
-            <span class="material-symbols-outlined text-[20px]">error</span>
-            <span class="font-body-md text-body-md">{{ $message }}</span>
-        </div>
+        <x-ui.alert type="error">{{ $message }}</x-ui.alert>
     @enderror
 
-    <!-- Warning Banner -->
+    <x-ui.page-header title="Inventario" description="Control de existencias, precios y alertas de reabastecimiento.">
+        <x-slot:actions>
+            <x-ui.button wire:click="openCreateModal">
+                <x-icon name="plus" />
+                Nuevo producto
+            </x-ui.button>
+        </x-slot:actions>
+    </x-ui.page-header>
+
     @if ($lowStockCount > 0)
-        <div class="w-full bg-[#FEF3C7] text-[#B45309] border-b border-[#F59E0B]/30 px-space-lg py-space-sm flex items-center justify-between mb-space-md">
-            <div class="flex items-center gap-space-sm">
-                <span class="material-symbols-outlined text-[20px]" style="font-variation-settings: 'FILL' 1;">warning</span>
-                <span class="font-headline-sm text-headline-sm">Atención de inventario:</span>
-                <span class="font-body-md">{{ $lowStockCount }} producto(s) por debajo del stock mínimo establecido.</span>
-            </div>
-        </div>
+        <x-ui.alert type="warning">
+            <p>
+                <span class="font-semibold">Atención de inventario:</span>
+                {{ $lowStockCount }} producto(s) por debajo del stock mínimo establecido.
+            </p>
+        </x-ui.alert>
     @endif
 
-    <!-- Page Header & Actions -->
-    <div class="flex flex-col md:flex-row md:items-center justify-between gap-space-md mb-space-lg">
-        <div>
-            <h1 class="font-headline-xl text-headline-xl text-on-surface">Gestión de Inventario</h1>
-            <p class="font-body-md text-on-surface-variant">Control de existencias, precios y alertas de reabastecimiento en tiempo real.</p>
-        </div>
-        <div class="flex items-center gap-space-sm">
-            <button class="bg-[#14B8A6] text-[#0F172A] px-space-md py-space-sm font-label-lg flex items-center gap-space-xs hover:opacity-90 transition-opacity"
-                    type="button" wire:click="openCreateModal">
-                <span class="material-symbols-outlined text-[18px]">add</span>
-                Nuevo producto
-            </button>
-        </div>
-    </div>
+    <x-ui.card padding="none">
+        <div class="flex flex-wrap items-center justify-between gap-3 border-b border-slate-200 bg-slate-50/70 p-4">
+            <div class="relative w-full sm:max-w-md">
+                <span class="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3 text-slate-400" aria-hidden="true">
+                    <x-icon name="magnifying-glass" />
+                </span>
+                <input type="search" wire:model.live.debounce.400ms="search"
+                       aria-label="Buscar por nombre o código de barras"
+                       placeholder="Buscar por nombre o código de barras…"
+                       class="h-10 w-full rounded-lg border border-slate-300 bg-white pl-10 pr-3.5 text-sm text-slate-900 placeholder:text-slate-400 focus:border-teal-600 focus:outline-none focus:ring-2 focus:ring-teal-600/20"/>
+            </div>
 
-    <!-- Filters & Search Bar -->
-    <div class="bg-surface-container-lowest p-space-md border border-outline-variant mb-space-md flex flex-wrap items-center justify-between gap-space-md">
-        <div class="flex items-center gap-space-sm flex-1 min-w-[280px]">
-            <span class="material-symbols-outlined text-outline">search</span>
-            <input class="w-full bg-transparent border-none text-on-surface placeholder:text-outline focus:outline-none font-body-md"
-                   placeholder="Buscar por nombre o código de barras..." type="text"
-                   wire:model.live.debounce.400ms="search"/>
+            <div class="w-full sm:w-52">
+                <x-ui.select name="statusFilter" aria-label="Filtrar por estado" wire:model.live="statusFilter">
+                    <option value="todos">Estado: todos</option>
+                    <option value="bajo">Stock bajo</option>
+                    <option value="normal">Normal</option>
+                    <option value="agotado">Agotado</option>
+                </x-ui.select>
+            </div>
         </div>
-        <div class="flex items-center gap-space-sm">
-            <select class="bg-surface-container-low border border-outline-variant px-space-sm py-space-xs font-body-sm text-on-surface focus:outline-none"
-                    wire:model.live="statusFilter">
-                <option value="todos">Estado: Todos</option>
-                <option value="bajo">Stock bajo</option>
-                <option value="normal">Normal</option>
-                <option value="agotado">Agotado</option>
-            </select>
-        </div>
-    </div>
 
-    <!-- Inventory Table -->
-    <div class="bg-surface-container-lowest border border-outline-variant overflow-x-auto">
-        <table class="w-full text-left border-collapse">
-            <thead>
-                <tr class="bg-surface-container-low border-b border-outline-variant font-label-md text-on-surface-variant uppercase">
-                    <th class="p-space-md">Producto</th>
-                    <th class="p-space-md">Código de barras</th>
-                    <th class="p-space-md">Precio (COP)</th>
-                    <th class="p-space-md">Stock</th>
-                    <th class="p-space-md">Mínimo</th>
-                    <th class="p-space-md">Unidad</th>
-                    <th class="p-space-md">Estado</th>
-                    <th class="p-space-md text-right">Acciones</th>
-                </tr>
-            </thead>
-            <tbody class="divide-y divide-outline-variant font-body-md">
-                @forelse ($products as $product)
-                    @php
-                        $out = $product->stock <= 0;
-                        $low = $product->min_stock > 0 && $product->stock < $product->min_stock;
-                    @endphp
-                    <tr class="hover:bg-surface-container-low/50 transition-colors" wire:key="product-{{ $product->id }}">
-                        <td class="p-space-md">
-                            <div class="flex items-center gap-space-sm">
-                                <div class="w-10 h-10 bg-surface-container border border-outline-variant flex items-center justify-center font-headline-sm text-primary">
-                                    {{ mb_substr($product->name, 0, 2) }}
-                                </div>
-                                <div class="font-semibold text-on-surface">{{ $product->name }}</div>
-                            </div>
-                        </td>
-                        <td class="p-space-md font-data-mono text-on-surface-variant">{{ $product->barcode ?: '—' }}</td>
-                        <td class="p-space-md font-data-mono text-on-surface">$ {{ number_format($product->price, 0, ',', '.') }}</td>
-                        <td class="p-space-md">
-                            @if ($out)
-                                <span class="inline-flex items-center gap-1 bg-[#FFDAD6] text-[#93000A] border border-[#BA1A1A] px-2 py-0.5 font-label-sm uppercase">
-                                    <span class="w-1.5 h-1.5 rounded-full bg-[#93000A]"></span>
-                                    {{ $product->stock }} {{ $product->unit }}
-                                </span>
-                            @elseif ($low)
-                                <span class="inline-flex items-center gap-1 bg-[#FEF3C7] text-[#B45309] border border-[#F59E0B] px-2 py-0.5 font-label-sm uppercase">
-                                    <span class="w-1.5 h-1.5 rounded-full bg-[#B45309] animate-pulse"></span>
-                                    {{ $product->stock }} {{ $product->unit }} (Stock bajo)
-                                </span>
-                            @else
-                                <span class="inline-flex items-center gap-1 bg-[#CCFBF1] text-[#0F766E] border border-[#14B8A6] px-2 py-0.5 font-label-sm uppercase">
-                                    {{ $product->stock }} {{ $product->unit }}
-                                </span>
-                            @endif
-                        </td>
-                        <td class="p-space-md font-data-mono">{{ $product->min_stock }} {{ $product->unit }}</td>
-                        <td class="p-space-md text-on-surface-variant capitalize">{{ $product->unit }}</td>
-                        <td class="p-space-md">
-                            @if ($out)
-                                <span class="bg-[#FFDAD6] text-[#93000A] font-label-sm px-2 py-1 uppercase">Agotado</span>
-                            @elseif ($low)
-                                <span class="bg-[#FEF3C7] text-[#B45309] font-label-sm px-2 py-1 uppercase">Alerta</span>
-                            @else
-                                <span class="bg-[#CCFBF1] text-[#0F766E] font-label-sm px-2 py-1 uppercase">Normal</span>
-                            @endif
-                        </td>
-                        <td class="p-space-md text-right">
-                            <div class="flex items-center justify-end gap-space-xs">
-                                <button class="p-1 hover:bg-surface-container text-on-surface-variant hover:text-on-surface" title="Editar"
-                                        type="button" wire:click="openEditModal({{ $product->id }})">
-                                    <span class="material-symbols-outlined text-[18px]">edit</span>
-                                </button>
-                                <button class="p-1 hover:bg-error-container text-error" title="Eliminar"
-                                        type="button" wire:click="delete({{ $product->id }})"
-                                        wire:confirm="¿Eliminar este producto? Esta acción no se puede deshacer.">
-                                    <span class="material-symbols-outlined text-[18px]">delete</span>
-                                </button>
-                            </div>
-                        </td>
-                    </tr>
-                @empty
+        <div class="overflow-x-auto">
+            <table class="min-w-full divide-y divide-slate-200">
+                <thead class="border-b border-slate-200 bg-slate-50">
                     <tr>
-                        <td class="p-space-lg text-center text-on-surface-variant" colspan="8">
-                            No hay productos que coincidan con los filtros aplicados.
-                        </td>
+                        <x-ui.table.th>Producto</x-ui.table.th>
+                        <x-ui.table.th align="right">Precio</x-ui.table.th>
+                        <x-ui.table.th align="right">Stock</x-ui.table.th>
+                        <x-ui.table.th align="right">Mínimo</x-ui.table.th>
+                        <x-ui.table.th>Unidad</x-ui.table.th>
+                        <x-ui.table.th>Estado</x-ui.table.th>
+                        <x-ui.table.th align="right">Acciones</x-ui.table.th>
                     </tr>
-                @endforelse
-            </tbody>
-        </table>
-
-        <!-- Table Footer / Pagination -->
-        <div class="p-space-md bg-surface-container-low border-t border-outline-variant flex items-center justify-between font-body-sm text-on-surface-variant">
-            <span>Mostrando {{ $products->firstItem() ?? 0 }} a {{ $products->lastItem() ?? 0 }} de {{ $products->total() }} productos registrados</span>
-            <div class="flex items-center gap-space-xs">
-                <button class="px-space-sm py-1 border border-outline-variant bg-surface-container-lowest disabled:opacity-50"
-                        type="button" wire:click="previousPage" @disabled($products->onFirstPage())>Anterior</button>
-                <span class="px-space-sm font-data-mono">Página {{ $products->currentPage() }} de {{ max($products->lastPage(), 1) }}</span>
-                <button class="px-space-sm py-1 border border-outline-variant bg-surface-container-lowest disabled:opacity-50"
-                        type="button" wire:click="nextPage" @disabled(! $products->hasMorePages())>Siguiente</button>
-            </div>
+                </thead>
+                <tbody class="divide-y divide-slate-100">
+                    @forelse ($products as $product)
+                        @php
+                            $out = $product->stock <= 0;
+                            $low = ! $out && $product->min_stock > 0 && $product->stock < $product->min_stock;
+                            $badge = $out ? ['red', 'Agotado'] : ($low ? ['amber', 'Stock bajo'] : ['green', 'Normal']);
+                        @endphp
+                        <tr wire:key="product-{{ $product->id }}" class="hover:bg-slate-50/70">
+                            <x-ui.table.td>
+                                <div class="flex items-center gap-3">
+                                    <span class="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-slate-100 text-sm font-semibold text-slate-600" aria-hidden="true">
+                                        {{ mb_strtoupper(mb_substr($product->name, 0, 2)) }}
+                                    </span>
+                                    <div class="min-w-0">
+                                        <p class="font-medium text-slate-900">{{ $product->name }}</p>
+                                        <p class="mt-0.5 text-xs text-slate-500">{{ $product->barcode ?: 'Sin código de barras' }}</p>
+                                    </div>
+                                </div>
+                            </x-ui.table.td>
+                            <x-ui.table.td align="right">
+                                <span class="font-semibold tabular-nums text-slate-900">{{ format_cop($product->price) }}</span>
+                            </x-ui.table.td>
+                            <x-ui.table.td align="right">
+                                <span class="font-medium tabular-nums {{ $out ? 'text-red-600' : ($low ? 'text-amber-600' : 'text-slate-700') }}">
+                                    {{ $product->stock }}
+                                </span>
+                            </x-ui.table.td>
+                            <x-ui.table.td align="right">
+                                <span class="tabular-nums text-slate-700">{{ $product->min_stock }}</span>
+                            </x-ui.table.td>
+                            <x-ui.table.td>
+                                <span class="capitalize text-slate-700">{{ $product->unit }}</span>
+                            </x-ui.table.td>
+                            <x-ui.table.td>
+                                <x-ui.badge :color="$badge[0]">{{ $badge[1] }}</x-ui.badge>
+                            </x-ui.table.td>
+                            <x-ui.table.td align="right">
+                                <div class="flex items-center justify-end gap-1">
+                                    <x-ui.button variant="ghost" size="sm" class="w-8 px-0 hover:no-underline"
+                                                 wire:click="openEditModal({{ $product->id }})"
+                                                 aria-label="Editar {{ $product->name }}">
+                                        <x-icon name="pencil-square" class="h-4 w-4" />
+                                    </x-ui.button>
+                                    <x-ui.button variant="ghost" size="sm" class="w-8 px-0 text-red-600 hover:text-red-700 hover:no-underline"
+                                                 wire:click="delete({{ $product->id }})"
+                                                 wire:confirm="¿Eliminar este producto? Esta acción no se puede deshacer."
+                                                 aria-label="Eliminar {{ $product->name }}">
+                                        <x-icon name="trash" class="h-4 w-4" />
+                                    </x-ui.button>
+                                </div>
+                            </x-ui.table.td>
+                        </tr>
+                    @empty
+                        <tr>
+                            <td colspan="7" class="px-4 py-14 text-center text-sm text-slate-500">
+                                No hay productos que coincidan con los filtros.
+                            </td>
+                        </tr>
+                    @endforelse
+                </tbody>
+            </table>
         </div>
-    </div>
 
-    <!-- MODAL: Producto (crear / editar) -->
+        {{ $products->links('partials.pagination', ['label' => 'productos']) }}
+    </x-ui.card>
+
     @if ($showModal)
-        <div class="fixed inset-0 bg-[#0B1C30]/60 backdrop-blur-sm z-50 flex items-center justify-center p-space-md" role="dialog" aria-modal="true">
-            <div class="bg-surface-container-lowest border border-outline-variant w-full max-w-2xl shadow-2xl overflow-hidden flex flex-col">
-                <div class="bg-surface-container-low px-space-lg py-space-md border-b border-outline-variant flex items-center justify-between">
-                    <div class="flex items-center gap-space-sm">
-                        <span class="material-symbols-outlined text-primary">inventory_2</span>
-                        <h3 class="font-headline-sm text-headline-sm text-on-surface">
-                            {{ $editingId !== null ? 'Editar Producto' : 'Registrar Nuevo Producto' }}
-                        </h3>
-                    </div>
-                    <button class="text-on-surface-variant hover:text-on-surface" type="button" wire:click="closeModal">
-                        <span class="material-symbols-outlined">close</span>
-                    </button>
+        <x-ui.modal property="showModal"
+                    :title="$editingId !== null ? 'Editar producto' : 'Nuevo producto'"
+                    :subtitle="$editingId !== null ? 'Actualiza los datos y el stock del producto.' : 'Registra un producto en tu inventario.'">
+            <form id="product-form" wire:submit="save" class="space-y-5">
+                <x-ui.input name="name" label="Nombre del producto" required wire:model="name"
+                            placeholder="Ej. Chorizo artesanal antioqueño" />
+
+                <x-ui.input name="barcode" label="Código de barras / SKU" wire:model="barcode"
+                            placeholder="7700000000000" help="Opcional." />
+
+                <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                    <x-ui.input name="price" type="number" min="0" step="0.01" label="Precio de venta (COP)"
+                                required wire:model="price" />
+
+                    <x-ui.select name="unit" label="Unidad de medida" required wire:model="unit">
+                        @foreach ($units as $option)
+                            <option value="{{ $option }}">{{ ucfirst($option) }}</option>
+                        @endforeach
+                    </x-ui.select>
+
+                    <x-ui.input name="stock" type="number" min="0" label="Stock actual" required
+                                wire:model="stock" help="El stock no puede ser negativo." />
+
+                    <x-ui.input name="min_stock" type="number" min="0" label="Stock mínimo de alerta" required
+                                wire:model="min_stock" help="Recibirás un aviso al bajar de este valor." />
                 </div>
-                <form class="p-space-lg space-y-space-md" wire:submit="save">
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-space-md">
-                        <div class="flex flex-col gap-space-xs md:col-span-2">
-                            <label class="font-label-md text-on-surface-variant uppercase">Nombre del producto *</label>
-                            <input class="bg-surface border border-outline-variant px-space-sm py-space-xs text-on-surface font-body-md focus:outline-none focus:border-on-surface"
-                                   placeholder="Ej. Chorizo Artesanal Antioqueño" type="text" wire:model="name"/>
-                            @error('name') <span class="font-body-sm text-error">{{ $message }}</span> @enderror
-                        </div>
-                        <div class="flex flex-col gap-space-xs">
-                            <label class="font-label-md text-on-surface-variant uppercase">Código de barras / SKU</label>
-                            <input class="bg-surface border border-outline-variant px-space-sm py-space-xs text-on-surface font-data-mono focus:outline-none focus:border-on-surface"
-                                   placeholder="7700000000000" type="text" wire:model="barcode"/>
-                            @error('barcode') <span class="font-body-sm text-error">{{ $message }}</span> @enderror
-                        </div>
-                        <div class="flex flex-col gap-space-xs">
-                            <label class="font-label-md text-on-surface-variant uppercase">Precio de venta (COP) *</label>
-                            <input class="bg-surface border border-outline-variant px-space-sm py-space-xs text-on-surface font-data-mono focus:outline-none focus:border-on-surface"
-                                   placeholder="15000" type="number" min="0" step="0.01" wire:model="price"/>
-                            @error('price') <span class="font-body-sm text-error">{{ $message }}</span> @enderror
-                        </div>
-                        <div class="flex flex-col gap-space-xs">
-                            <label class="font-label-md text-on-surface-variant uppercase">Unidad de medida *</label>
-                            <select class="bg-surface border border-outline-variant px-space-sm py-space-xs text-on-surface font-body-md focus:outline-none focus:border-on-surface"
-                                    wire:model="unit">
-                                @foreach ($units as $option)
-                                    <option value="{{ $option }}">{{ ucfirst($option) }}</option>
-                                @endforeach
-                            </select>
-                            @error('unit') <span class="font-body-sm text-error">{{ $message }}</span> @enderror
-                        </div>
-                        <div class="flex flex-col gap-space-xs">
-                            <label class="font-label-md text-on-surface-variant uppercase">Stock actual *</label>
-                            <input class="bg-surface border border-outline-variant px-space-sm py-space-xs text-on-surface font-data-mono focus:outline-none focus:border-on-surface"
-                                   type="number" min="0" wire:model="stock"/>
-                            @error('stock') <span class="font-body-sm text-error flex items-center gap-1 mt-0.5">
-                                <span class="material-symbols-outlined text-[14px]">error</span>{{ $message }}
-                            </span> @enderror
-                        </div>
-                        <div class="flex flex-col gap-space-xs">
-                            <label class="font-label-md text-on-surface-variant uppercase">Stock mínimo de alerta *</label>
-                            <input class="bg-surface border border-outline-variant px-space-sm py-space-xs text-on-surface font-data-mono focus:outline-none focus:border-on-surface"
-                                   type="number" min="0" wire:model="min_stock"/>
-                            @error('min_stock') <span class="font-body-sm text-error">{{ $message }}</span> @enderror
-                        </div>
-                    </div>
-                    <div class="pt-space-md border-t border-outline-variant flex items-center justify-end gap-space-sm">
-                        <button class="bg-surface border border-outline-variant px-space-md py-space-sm font-label-lg text-on-surface hover:bg-surface-container transition-colors"
-                                type="button" wire:click="closeModal">
-                            Cancelar
-                        </button>
-                        <button class="bg-[#14B8A6] text-[#0F172A] px-space-lg py-space-sm font-label-lg hover:opacity-90 transition-opacity" type="submit">
-                            {{ $editingId !== null ? 'Guardar cambios' : 'Guardar producto' }}
-                        </button>
-                    </div>
-                </form>
-            </div>
-        </div>
+            </form>
+
+            <x-slot:footer>
+                <x-ui.button variant="secondary" @click="$wire.set('showModal', false)">Cancelar</x-ui.button>
+                <x-ui.button type="submit" form="product-form">{{ $editingId !== null ? 'Guardar cambios' : 'Registrar producto' }}</x-ui.button>
+            </x-slot:footer>
+        </x-ui.modal>
     @endif
 </div>

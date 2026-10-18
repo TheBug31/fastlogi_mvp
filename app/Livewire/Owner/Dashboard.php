@@ -41,10 +41,17 @@ class Dashboard extends Component
             })
             ->values();
 
+        // Tiempo promedio de entrega (guía §6): minutos entre la creación y la
+        // última actualización de los pedidos entregados. Solo lectura.
+        $promedioEntrega = Order::where('status', OrderStatus::Delivered->value)
+            ->selectRaw('AVG(TIMESTAMPDIFF(SECOND, created_at, updated_at)) as promedio')
+            ->value('promedio');
+
         $kpis = [
             'ventasHoy' => Order::where('status', OrderStatus::Delivered->value)
                 ->whereDate('updated_at', today())
                 ->sum('total'),
+            'promedioEntrega' => $promedioEntrega !== null ? (int) round(((float) $promedioEntrega) / 60) : null,
             'pedidosHoy' => Order::whereDate('created_at', today())->count(),
             'activos' => Order::whereIn('status', $activeStatuses)->count(),
             'entregadosHoy' => Order::where('status', OrderStatus::Delivered->value)
@@ -70,11 +77,20 @@ class Dashboard extends Component
             ->take(8)
             ->get();
 
+        // Alertas de inventario del dashboard (guía §6). Solo lectura.
+        $lowStockProducts = Product::query()
+            ->where('min_stock', '>', 0)
+            ->whereColumn('stock', '<', 'min_stock')
+            ->orderBy('stock')
+            ->take(6)
+            ->get();
+
         return view('livewire.owner.dashboard', [
             'kpis' => $kpis,
             'activeOrders' => $activeOrders,
             'drivers' => $drivers,
             'timeline' => $timeline,
+            'lowStockProducts' => $lowStockProducts,
         ]);
     }
 }

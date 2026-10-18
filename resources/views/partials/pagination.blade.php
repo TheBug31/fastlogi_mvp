@@ -8,7 +8,7 @@
             <span class="font-medium tabular-nums text-slate-700">{{ $paginator->lastItem() }}</span>
             de
             <span class="font-medium tabular-nums text-slate-700">{{ $paginator->total() }}</span>
-            pedidos
+            {{ $label ?? 'pedidos' }}
         </p>
 
         <div class="flex flex-wrap items-center gap-1.5">

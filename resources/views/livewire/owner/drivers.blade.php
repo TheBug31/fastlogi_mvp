@@ -1,234 +1,202 @@
-<div class="flex flex-col w-full pb-16">
-    @if (session('success'))
-        <div class="w-full bg-primary-fixed text-on-primary-fixed px-space-lg py-space-sm flex items-center gap-space-sm mb-space-md rounded-lg">
-            <span class="material-symbols-outlined text-[20px]">check_circle</span>
-            <span class="font-body-md">{{ session('success') }}</span>
-        </div>
+﻿<div class="space-y-6">
+    <x-ui.toast />
+
+    @php
+        $threshold = auth()->user()?->business?->inactivity_threshold_minutes ?? 15;
+        $disconnectedWithOrders = $drivers->filter(
+            fn ($driver) => $driver->availability === \App\Enums\DriverAvailability::Offline && $driver->active_orders_count > 0,
+        );
+    @endphp
+
+    <x-ui.page-header title="Repartidores" description="Supervisión de la flota, disponibilidad y límites de carga.">
+        <x-slot:actions>
+            <x-ui.button wire:click="openCreateModal">
+                <x-icon name="plus" />
+                Nuevo repartidor
+            </x-ui.button>
+        </x-slot:actions>
+    </x-ui.page-header>
+
+    @if ($disconnectedWithOrders->isNotEmpty())
+        <x-ui.alert type="error">
+            <p>
+                <span class="font-semibold">Sin conexión con pedidos asignados:</span>
+                {{ $disconnectedWithOrders->count() }} repartidor(es) desconectado(s) con pedidos activos.
+            </p>
+            <x-slot:actions>
+                <a href="{{ route('owner.orders.index') }}" wire:navigate class="font-medium underline">Ver pedidos</a>
+            </x-slot:actions>
+        </x-ui.alert>
     @endif
 
-    <div class="flex flex-col md:flex-row md:items-center justify-between gap-space-md mb-space-lg">
-        <div>
-            <h1 class="font-headline-xl text-headline-xl text-on-surface">Gestión de Repartidores</h1>
-            <p class="font-body-md text-on-surface-variant">Supervisión de la flota, disponibilidad y límites de carga</p>
-        </div>
-        <button type="button" wire:click="openCreateModal"
-                class="px-space-md py-space-sm bg-primary text-on-primary font-label-lg rounded-lg flex items-center gap-space-xs hover:opacity-90 transition-opacity">
-            <span class="material-symbols-outlined text-[20px]">add</span>
-            Nuevo repartidor
-        </button>
-    </div>
-
-    <div class="grid grid-cols-2 lg:grid-cols-4 gap-space-md mb-space-lg">
-        @foreach ([
-            ['Total flota', $kpis['total'], 'two_wheeler'],
-            ['Disponibles', $kpis['disponibles'], 'check_circle'],
-            ['Ocupados', $kpis['ocupados'], 'pending_actions'],
-            ['Desconectados', $kpis['offline'], 'wifi_off'],
-        ] as [$label, $value, $icon])
-            <div class="p-space-md bg-surface-container-lowest border border-outline-variant rounded-xl flex items-center justify-between">
-                <div>
-                    <p class="font-label-md text-label-md text-on-surface-variant uppercase">{{ $label }}</p>
-                    <h3 class="font-headline-lg text-headline-lg text-on-surface font-data-mono">{{ $value }}</h3>
-                </div>
-                <span class="material-symbols-outlined text-[26px] text-primary">{{ $icon }}</span>
+    <x-ui.card padding="none">
+        <div class="flex flex-wrap items-center justify-between gap-3 border-b border-slate-200 bg-slate-50/70 p-4">
+            <div class="relative w-full sm:max-w-md">
+                <span class="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3 text-slate-400" aria-hidden="true">
+                    <x-icon name="magnifying-glass" />
+                </span>
+                <input type="search" wire:model.live.debounce.400ms="search"
+                       aria-label="Buscar por nombre, correo o teléfono"
+                       placeholder="Buscar por nombre, correo o teléfono…"
+                       class="h-10 w-full rounded-lg border border-slate-300 bg-white pl-10 pr-3.5 text-sm text-slate-900 placeholder:text-slate-400 focus:border-teal-600 focus:outline-none focus:ring-2 focus:ring-teal-600/20"/>
             </div>
-        @endforeach
-    </div>
 
-    <div class="bg-surface-container-lowest border border-outline-variant rounded-xl p-space-md mb-space-md flex flex-wrap items-center justify-between gap-space-md">
-        <div class="flex items-center gap-space-sm flex-1 min-w-[260px]">
-            <span class="material-symbols-outlined text-outline">search</span>
-            <input class="w-full bg-transparent border-none text-on-surface placeholder:text-outline focus:outline-none font-body-md"
-                   placeholder="Buscar por nombre, correo o teléfono..."
-                   type="text" wire:model.live.debounce.400ms="search"/>
+            <div class="w-full sm:w-52">
+                <x-ui.select name="availabilityFilter" aria-label="Filtrar por disponibilidad" wire:model.live="availabilityFilter">
+                    <option value="todos">Disponibilidad: todas</option>
+                    @foreach ($availabilities as $availability)
+                        <option value="{{ $availability->value }}">{{ $availability->label() }}</option>
+                    @endforeach
+                </x-ui.select>
+            </div>
         </div>
-        <select class="bg-surface-container-low border border-outline-variant px-space-sm py-space-xs font-body-sm text-on-surface rounded-lg focus:outline-none"
-                wire:model.live="availabilityFilter">
-            <option value="todos">Disponibilidad: Todas</option>
-            @foreach ($availabilities as $availability)
-                <option value="{{ $availability->value }}">{{ $availability->label() }}</option>
-            @endforeach
-        </select>
-    </div>
 
-    <div class="bg-surface-container-lowest border border-outline-variant rounded-xl overflow-x-auto">
-        <table class="w-full text-left">
-            <thead>
-                <tr class="font-label-md text-on-surface-variant uppercase border-b border-outline-variant">
-                    <th class="px-space-lg py-space-sm font-medium">Repartidor</th>
-                    <th class="px-space-sm py-space-sm font-medium">Contacto</th>
-                    <th class="px-space-sm py-space-sm font-medium">Disponibilidad</th>
-                    <th class="px-space-sm py-space-sm font-medium">Capacidad</th>
-                    <th class="px-space-sm py-space-sm font-medium">Última señal</th>
-                    <th class="px-space-lg py-space-sm font-medium text-right">Acciones</th>
-                </tr>
-            </thead>
-            <tbody class="divide-y divide-outline-variant">
-                @forelse ($drivers as $driver)
-                    @php
-                        $badge = match ($driver->availability) {
-                            \App\Enums\DriverAvailability::Available => 'bg-[#DCFCE7] text-[#15803D]',
-                            \App\Enums\DriverAvailability::Busy => 'bg-[#FEF3C7] text-[#B45309]',
-                            \App\Enums\DriverAvailability::Offline => 'bg-surface-container-high text-on-surface-variant',
-                        };
-                    @endphp
-                    <tr wire:key="driver-{{ $driver->id }}" class="font-body-md">
-                        <td class="px-space-lg py-space-sm">
-                            <div class="font-medium text-on-surface">{{ $driver->user?->name }}</div>
-                            <div class="font-label-sm text-label-sm text-on-surface-variant">Repartidor #{{ $driver->id }}</div>
-                        </td>
-                        <td class="px-space-sm py-space-sm text-on-surface-variant">
-                            <div>{{ $driver->user?->email }}</div>
-                            <div class="font-label-sm text-label-sm">{{ $driver->user?->phone }}</div>
-                        </td>
-                        <td class="px-space-sm py-space-sm">
-                            <span class="px-2 py-0.5 rounded-full font-label-sm text-label-sm {{ $badge }}">
-                                {{ $driver->availability->label() }}
-                            </span>
-                        </td>
-                        <td class="px-space-sm py-space-sm">
-                            <span class="font-data-mono text-on-surface">{{ $driver->active_orders_count }}</span>
-                            <span class="text-on-surface-variant">/ {{ $driver->max_active_orders }}</span>
-                        </td>
-                        <td class="px-space-sm py-space-sm text-on-surface-variant">
-                            {{ $driver->last_seen_at ? $driver->last_seen_at->diffForHumans() : 'Sin señal' }}
-                        </td>
-                        <td class="px-space-lg py-space-sm">
-                            <div class="flex items-center justify-end gap-space-xs">
-                                <button type="button" wire:click="openEditModal({{ $driver->id }})"
-                                        class="p-1.5 text-on-surface-variant hover:text-on-surface hover:bg-surface-container rounded-lg" title="Editar">
-                                    <span class="material-symbols-outlined text-[20px]">edit</span>
-                                </button>
-                                <button type="button" wire:click="toggleAvailability({{ $driver->id }})"
-                                        class="p-1.5 rounded-lg {{ $driver->availability === \App\Enums\DriverAvailability::Offline ? 'text-primary hover:bg-surface-container' : 'text-tertiary hover:bg-surface-container' }}"
-                                        title="{{ $driver->availability === \App\Enums\DriverAvailability::Offline ? 'Marcar disponible' : 'Marcar desconectado' }}">
-                                    <span class="material-symbols-outlined text-[20px]">
-                                        {{ $driver->availability === \App\Enums\DriverAvailability::Offline ? 'power_settings_new' : 'power_off' }}
-                                    </span>
-                                </button>
-                            </div>
-                        </td>
-                    </tr>
-                @empty
+        <div class="overflow-x-auto">
+            <table class="min-w-full divide-y divide-slate-200">
+                <thead class="border-b border-slate-200 bg-slate-50">
                     <tr>
-                        <td colspan="6" class="px-space-lg py-space-xl text-center font-body-md text-on-surface-variant">
-                            No hay repartidores que coincidan con el filtro.
-                        </td>
+                        <x-ui.table.th>Repartidor</x-ui.table.th>
+                        <x-ui.table.th>Disponibilidad</x-ui.table.th>
+                        <x-ui.table.th>Pedidos activos</x-ui.table.th>
+                        <x-ui.table.th>Última conexión</x-ui.table.th>
+                        <x-ui.table.th align="right">Límite de pedidos</x-ui.table.th>
+                        <x-ui.table.th align="right">Acciones</x-ui.table.th>
                     </tr>
-                @endforelse
-            </tbody>
-        </table>
-    </div>
-
-    <div class="mt-space-md">
-        {{ $drivers->links() }}
-    </div>
-
-    <!-- MODAL: Nuevo repartidor -->
-    @if ($showCreateModal)
-        <div class="fixed inset-0 bg-[#0B1C30]/60 backdrop-blur-sm z-50 flex items-center justify-center p-space-md" role="dialog" aria-modal="true">
-            <div class="bg-surface-container-lowest border border-outline-variant w-full max-w-lg shadow-2xl overflow-hidden">
-                <div class="bg-surface-container-low px-space-lg py-space-md border-b border-outline-variant flex items-center justify-between">
-                    <h3 class="font-headline-sm text-headline-sm text-on-surface">Nuevo repartidor</h3>
-                    <button class="text-on-surface-variant hover:text-on-surface" type="button" wire:click="$set('showCreateModal', false)">
-                        <span class="material-symbols-outlined">close</span>
-                    </button>
-                </div>
-                <form class="p-space-lg space-y-space-md" wire:submit="createDriver">
-                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-space-md">
-                        <div class="flex flex-col gap-space-xs">
-                            <label class="font-label-md text-on-surface-variant uppercase">Nombre</label>
-                            <input class="bg-surface border border-outline-variant px-space-sm py-space-xs text-on-surface font-body-md rounded-lg focus:outline-none focus:border-on-surface"
-                                   type="text" wire:model="name"/>
-                            @error('name') <span class="font-body-sm text-error">{{ $message }}</span> @enderror
-                        </div>
-                        <div class="flex flex-col gap-space-xs">
-                            <label class="font-label-md text-on-surface-variant uppercase">Teléfono</label>
-                            <input class="bg-surface border border-outline-variant px-space-sm py-space-xs text-on-surface font-body-md rounded-lg focus:outline-none focus:border-on-surface"
-                                   type="text" wire:model="phone"/>
-                            @error('phone') <span class="font-body-sm text-error">{{ $message }}</span> @enderror
-                        </div>
-                        <div class="flex flex-col gap-space-xs sm:col-span-2">
-                            <label class="font-label-md text-on-surface-variant uppercase">Correo</label>
-                            <input class="bg-surface border border-outline-variant px-space-sm py-space-xs text-on-surface font-body-md rounded-lg focus:outline-none focus:border-on-surface"
-                                   type="email" wire:model="email"/>
-                            @error('email') <span class="font-body-sm text-error">{{ $message }}</span> @enderror
-                        </div>
-                        <div class="flex flex-col gap-space-xs">
-                            <label class="font-label-md text-on-surface-variant uppercase">Contraseña</label>
-                            <input class="bg-surface border border-outline-variant px-space-sm py-space-xs text-on-surface font-body-md rounded-lg focus:outline-none focus:border-on-surface"
-                                   type="password" wire:model="password" autocomplete="new-password"/>
-                            @error('password') <span class="font-body-sm text-error">{{ $message }}</span> @enderror
-                        </div>
-                        <div class="flex flex-col gap-space-xs">
-                            <label class="font-label-md text-on-surface-variant uppercase">Límite de pedidos activos</label>
-                            <select class="bg-surface border border-outline-variant px-space-sm py-space-xs text-on-surface font-body-md rounded-lg focus:outline-none focus:border-on-surface"
-                                    wire:model="max_active_orders">
-                                @for ($i = 1; $i <= 8; $i++)
-                                    <option value="{{ $i }}">{{ $i }} pedido(s)</option>
-                                @endfor
-                            </select>
-                            @error('max_active_orders') <span class="font-body-sm text-error">{{ $message }}</span> @enderror
-                        </div>
-                    </div>
-                    <div class="flex items-center justify-end gap-space-sm">
-                        <button class="border border-outline-variant px-space-md py-space-sm font-label-lg text-on-surface rounded-lg"
-                                type="button" wire:click="$set('showCreateModal', false)">Cancelar</button>
-                        <button class="bg-primary text-on-primary px-space-lg py-space-sm font-label-lg rounded-lg" type="submit">Vincular repartidor</button>
-                    </div>
-                </form>
-            </div>
+                </thead>
+                <tbody class="divide-y divide-slate-100">
+                    @forelse ($drivers as $driver)
+                        @php
+                            $offline = $driver->availability === \App\Enums\DriverAvailability::Offline;
+                            $stale = $driver->last_seen_at === null || $driver->last_seen_at->lt(now()->subMinutes($threshold));
+                        @endphp
+                        <tr wire:key="driver-{{ $driver->id }}" class="hover:bg-slate-50/70">
+                            <x-ui.table.td>
+                                <div class="flex items-center gap-3">
+                                    <x-ui.avatar :name="$driver->user?->name ?? ''" />
+                                    <div class="min-w-0">
+                                        <p class="font-medium text-slate-900">{{ $driver->user?->name }}</p>
+                                        <p class="mt-0.5 text-xs tabular-nums text-slate-500">{{ $driver->user?->phone ?: 'Sin teléfono' }}</p>
+                                    </div>
+                                </div>
+                            </x-ui.table.td>
+                            <x-ui.table.td>
+                                <x-ui.availability-badge :availability="$driver->availability" />
+                            </x-ui.table.td>
+                            <x-ui.table.td>
+                                <div class="w-40">
+                                    <x-ui.capacity-bar :active="$driver->active_orders_count" :max="$driver->max_active_orders" />
+                                </div>
+                            </x-ui.table.td>
+                            <x-ui.table.td>
+                                <span class="text-xs {{ $stale ? 'font-medium text-amber-600' : 'text-slate-500' }}">
+                                    {{ $driver->last_seen_at ? $driver->last_seen_at->diffForHumans() : 'Sin señal' }}
+                                </span>
+                            </x-ui.table.td>
+                            <x-ui.table.td align="right">
+                                <span class="tabular-nums text-slate-700">{{ $driver->max_active_orders }}</span>
+                                <span class="text-slate-500">pedidos</span>
+                            </x-ui.table.td>
+                            <x-ui.table.td align="right">
+                                <div class="flex items-center justify-end gap-1">
+                                    <x-ui.button variant="ghost" size="sm" class="w-8 px-0 hover:no-underline"
+                                                 wire:click="openEditModal({{ $driver->id }})"
+                                                 aria-label="Editar {{ $driver->user?->name }}">
+                                        <x-icon name="pencil-square" class="h-4 w-4" />
+                                    </x-ui.button>
+                                    <x-ui.button variant="ghost" size="sm"
+                                                 class="w-8 px-0 hover:no-underline {{ $offline ? 'text-teal-700' : 'text-slate-500' }}"
+                                                 wire:click="toggleAvailability({{ $driver->id }})"
+                                                 aria-label="{{ $offline ? 'Marcar disponible' : 'Marcar desconectado' }}"
+                                                 title="{{ $offline ? 'Marcar disponible' : 'Marcar desconectado' }}">
+                                        <x-icon name="power" class="h-4 w-4" />
+                                    </x-ui.button>
+                                </div>
+                            </x-ui.table.td>
+                        </tr>
+                    @empty
+                        <tr>
+                            <td colspan="6" class="px-4 py-14 text-center text-sm text-slate-500">
+                                No hay repartidores que coincidan con el filtro.
+                            </td>
+                        </tr>
+                    @endforelse
+                </tbody>
+            </table>
         </div>
+
+        {{ $drivers->links('partials.pagination', ['label' => 'repartidores']) }}
+    </x-ui.card>
+
+    @if ($showCreateModal)
+        <x-ui.modal property="showCreateModal" title="Nuevo repartidor"
+                    subtitle="El repartidor podrá iniciar sesión con estas credenciales.">
+            <form id="driver-create-form" wire:submit="createDriver" class="space-y-5">
+                <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                    <x-ui.input name="name" label="Nombre" required wire:model="name" />
+                    <x-ui.input name="phone" label="Teléfono" type="tel" required wire:model="phone" />
+                    <div class="sm:col-span-2">
+                        <x-ui.input name="email" type="email" label="Correo" required wire:model="email" autocomplete="off" />
+                    </div>
+                    <div class="sm:col-span-2" x-data="{ show: false }">
+                        <x-ui.input name="password" label="Contraseña" type="password" required wire:model="password"
+                                    autocomplete="new-password" help="Mínimo 8 caracteres.">
+                            <x-slot:suffix>
+                                <button type="button" @click="show = !show"
+                                        :aria-label="show ? 'Ocultar contraseña' : 'Mostrar contraseña'"
+                                        class="flex items-center rounded text-slate-400 transition-colors hover:text-slate-600 focus:outline-none focus-visible:ring-2 focus-visible:ring-teal-600">
+                                    <x-icon name="eye" x-show="!show" />
+                                    <x-icon name="eye-slash" x-show="show" x-cloak />
+                                </button>
+                            </x-slot:suffix>
+                        </x-ui.input>
+                    </div>
+                </div>
+
+                <div>
+                    <label for="max_active_orders" class="mb-1.5 block text-sm font-medium text-slate-700">Máximo de pedidos activos</label>
+                    <div class="flex items-center gap-4">
+                        <input id="max_active_orders" type="range" min="1" max="8" step="1" wire:model.live="max_active_orders"
+                               class="w-full cursor-pointer accent-teal-600"/>
+                        <span class="w-24 shrink-0 text-right text-sm font-medium tabular-nums text-slate-700">{{ $max_active_orders }} pedido(s)</span>
+                    </div>
+                    @error('max_active_orders') <p class="mt-1.5 text-xs font-medium text-red-600">{{ $message }}</p> @enderror
+                </div>
+            </form>
+
+            <x-slot:footer>
+                <x-ui.button variant="secondary" @click="$wire.set('showCreateModal', false)">Cancelar</x-ui.button>
+                <x-ui.button type="submit" form="driver-create-form">Vincular repartidor</x-ui.button>
+            </x-slot:footer>
+        </x-ui.modal>
     @endif
 
-    <!-- MODAL: Editar repartidor -->
     @if ($showEditModal)
-        <div class="fixed inset-0 bg-[#0B1C30]/60 backdrop-blur-sm z-50 flex items-center justify-center p-space-md" role="dialog" aria-modal="true">
-            <div class="bg-surface-container-lowest border border-outline-variant w-full max-w-lg shadow-2xl overflow-hidden">
-                <div class="bg-surface-container-low px-space-lg py-space-md border-b border-outline-variant flex items-center justify-between">
-                    <h3 class="font-headline-sm text-headline-sm text-on-surface">Editar repartidor</h3>
-                    <button class="text-on-surface-variant hover:text-on-surface" type="button" wire:click="$set('showEditModal', false)">
-                        <span class="material-symbols-outlined">close</span>
-                    </button>
+        <x-ui.modal property="showEditModal" title="Editar repartidor"
+                    subtitle="Actualiza los datos y el límite de carga del repartidor.">
+            <form id="driver-edit-form" wire:submit="updateDriver" class="space-y-5">
+                <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                    <x-ui.input name="edit_name" label="Nombre" required wire:model="edit_name" />
+                    <x-ui.input name="edit_phone" label="Teléfono" type="tel" required wire:model="edit_phone" />
+                    <div class="sm:col-span-2">
+                        <x-ui.input name="edit_email" type="email" label="Correo" required wire:model="edit_email" />
+                    </div>
                 </div>
-                <form class="p-space-lg space-y-space-md" wire:submit="updateDriver">
-                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-space-md">
-                        <div class="flex flex-col gap-space-xs">
-                            <label class="font-label-md text-on-surface-variant uppercase">Nombre</label>
-                            <input class="bg-surface border border-outline-variant px-space-sm py-space-xs text-on-surface font-body-md rounded-lg focus:outline-none focus:border-on-surface"
-                                   type="text" wire:model="edit_name"/>
-                            @error('edit_name') <span class="font-body-sm text-error">{{ $message }}</span> @enderror
-                        </div>
-                        <div class="flex flex-col gap-space-xs">
-                            <label class="font-label-md text-on-surface-variant uppercase">Teléfono</label>
-                            <input class="bg-surface border border-outline-variant px-space-sm py-space-xs text-on-surface font-body-md rounded-lg focus:outline-none focus:border-on-surface"
-                                   type="text" wire:model="edit_phone"/>
-                            @error('edit_phone') <span class="font-body-sm text-error">{{ $message }}</span> @enderror
-                        </div>
-                        <div class="flex flex-col gap-space-xs sm:col-span-2">
-                            <label class="font-label-md text-on-surface-variant uppercase">Correo</label>
-                            <input class="bg-surface border border-outline-variant px-space-sm py-space-xs text-on-surface font-body-md rounded-lg focus:outline-none focus:border-on-surface"
-                                   type="email" wire:model="edit_email"/>
-                            @error('edit_email') <span class="font-body-sm text-error">{{ $message }}</span> @enderror
-                        </div>
-                        <div class="flex flex-col gap-space-xs sm:col-span-2">
-                            <label class="font-label-md text-on-surface-variant uppercase">Límite de pedidos activos</label>
-                            <select class="bg-surface border border-outline-variant px-space-sm py-space-xs text-on-surface font-body-md rounded-lg focus:outline-none focus:border-on-surface"
-                                    wire:model="edit_max_active_orders">
-                                @for ($i = 1; $i <= 8; $i++)
-                                    <option value="{{ $i }}">{{ $i }} pedido(s)</option>
-                                @endfor
-                            </select>
-                            @error('edit_max_active_orders') <span class="font-body-sm text-error">{{ $message }}</span> @enderror
-                        </div>
+
+                <div>
+                    <label for="edit_max_active_orders" class="mb-1.5 block text-sm font-medium text-slate-700">Máximo de pedidos activos</label>
+                    <div class="flex items-center gap-4">
+                        <input id="edit_max_active_orders" type="range" min="1" max="8" step="1" wire:model.live="edit_max_active_orders"
+                               class="w-full cursor-pointer accent-teal-600"/>
+                        <span class="w-24 shrink-0 text-right text-sm font-medium tabular-nums text-slate-700">{{ $edit_max_active_orders }} pedido(s)</span>
                     </div>
-                    <div class="flex items-center justify-end gap-space-sm">
-                        <button class="border border-outline-variant px-space-md py-space-sm font-label-lg text-on-surface rounded-lg"
-                                type="button" wire:click="$set('showEditModal', false)">Cancelar</button>
-                        <button class="bg-primary text-on-primary px-space-lg py-space-sm font-label-lg rounded-lg" type="submit">Guardar cambios</button>
-                    </div>
-                </form>
-            </div>
-        </div>
+                    @error('edit_max_active_orders') <p class="mt-1.5 text-xs font-medium text-red-600">{{ $message }}</p> @enderror
+                </div>
+            </form>
+
+            <x-slot:footer>
+                <x-ui.button variant="secondary" @click="$wire.set('showEditModal', false)">Cancelar</x-ui.button>
+                <x-ui.button type="submit" form="driver-edit-form">Guardar cambios</x-ui.button>
+            </x-slot:footer>
+        </x-ui.modal>
     @endif
 </div>

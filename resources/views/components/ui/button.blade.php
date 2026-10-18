@@ -2,6 +2,7 @@
     'variant' => 'primary',
     'size' => 'md',
     'type' => 'button',
+    'href' => null,
 ])
 
 @php
@@ -23,6 +24,12 @@
     $classes = trim($base.' '.($variants[$variant] ?? $variants['primary']).' '.($sizes[$size] ?? $sizes['md']));
 @endphp
 
-<button {{ $attributes->merge(['class' => $classes, 'type' => $type]) }}>
-    {{ $slot }}
-</button>
+@if ($href)
+    <a href="{{ $href }}" {{ $attributes->except('type')->merge(['class' => $classes]) }}>
+        {{ $slot }}
+    </a>
+@else
+    <button {{ $attributes->merge(['class' => $classes, 'type' => $type]) }}>
+        {{ $slot }}
+    </button>
+@endif

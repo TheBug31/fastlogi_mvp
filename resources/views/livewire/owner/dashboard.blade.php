@@ -1,172 +1,177 @@
-<div class="flex flex-col w-full pb-16" wire:poll.15s>
-    <div class="flex flex-col md:flex-row md:items-center justify-between gap-space-md mb-space-lg">
-        <div>
-            <h1 class="font-headline-xl text-headline-xl text-on-surface">Panel de Operaciones</h1>
-            <p class="font-body-md text-on-surface-variant">
-                Resumen de {{ auth()->user()?->business?->name ?? 'tu negocio' }} · {{ now()->translatedFormat('d \d\e F, Y') }}
-            </p>
-        </div>
-        <div class="flex items-center gap-space-sm">
-            <a href="{{ route('owner.orders.create') }}" wire:navigate
-               class="bg-primary text-on-primary px-space-md py-space-sm font-label-lg rounded-lg flex items-center gap-space-xs hover:opacity-90 transition-opacity">
-                <span class="material-symbols-outlined text-[18px]">add</span>
-                Nuevo pedido
-            </a>
-            <a href="{{ route('owner.orders.index') }}" wire:navigate
-               class="border border-outline-variant px-space-md py-space-sm font-label-lg rounded-lg flex items-center gap-space-xs hover:bg-surface-container transition-colors">
-                <span class="material-symbols-outlined text-[18px]">list</span>
+﻿<div class="space-y-6" wire:poll.15s>
+    @php
+        $orderLabel = fn ($id) => '#' . str_pad((string) $id, 4, '0', STR_PAD_LEFT);
+    @endphp
+
+    <x-ui.page-header title="Panel de Operaciones"
+                      :description="'Resumen de ' . (auth()->user()?->business?->name ?? 'tu negocio') . ' · ' . format_date(now())">
+        <x-slot:actions>
+            <x-ui.button variant="secondary" :href="route('owner.orders.index')" wire:navigate>
+                <x-icon name="list-bullet" />
                 Ver pedidos
-            </a>
+            </x-ui.button>
+            <x-ui.button :href="route('owner.orders.create')" wire:navigate>
+                <x-icon name="plus" />
+                Nuevo pedido
+            </x-ui.button>
+        </x-slot:actions>
+    </x-ui.page-header>
+
+    <div class="grid grid-cols-1 gap-6 sm:grid-cols-2 xl:grid-cols-4">
+        <x-ui.kpi label="Ventas de hoy" icon="banknotes">{{ format_cop($kpis['ventasHoy']) }}</x-ui.kpi>
+        <x-ui.kpi label="Pedidos entregados" icon="check-circle">{{ $kpis['entregadosHoy'] }}</x-ui.kpi>
+        <x-ui.kpi label="Tiempo promedio de entrega" icon="clock">
+            {{ $kpis['promedioEntrega'] !== null ? $kpis['promedioEntrega'] . ' min' : '—' }}
+        </x-ui.kpi>
+        <x-ui.kpi label="Pedidos activos" icon="truck">{{ $kpis['activos'] }}</x-ui.kpi>
+    </div>
+
+    <x-ui.card padding="none">
+        <div class="flex items-center justify-between border-b border-slate-200 px-6 py-4">
+            <h2 class="text-base font-semibold text-slate-900">Pedidos en curso</h2>
+            <span class="text-xs text-slate-500">Actualización automática</span>
         </div>
-    </div>
 
-    @if ($kpis['stockBajo'] > 0)
-        <a href="{{ route('owner.inventory.index') }}" wire:navigate
-           class="w-full bg-error-container text-on-error-container px-space-lg py-space-sm flex items-center gap-space-sm mb-space-md rounded-lg">
-            <span class="material-symbols-outlined text-[20px]">warning</span>
-            <span class="font-body-md">
-                Tienes {{ $kpis['stockBajo'] }} producto(s) por debajo del stock mínimo. Reabastece para no perder ventas.
-            </span>
-        </a>
-    @endif
-
-    <div class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-space-md mb-space-lg">
-        @foreach ([
-            ['Ventas de hoy', '$ ' . number_format($kpis['ventasHoy'], 0, ',', '.'), 'payments', 'text-primary'],
-            ['Pedidos activos', $kpis['activos'], 'local_shipping', 'text-tertiary'],
-            ['Entregados hoy', $kpis['entregadosHoy'], 'task_alt', 'text-primary'],
-            ['Repartidores disponibles', $kpis['disponibles'], 'two_wheeler', 'text-tertiary'],
-        ] as [$label, $value, $icon, $tone])
-            <div class="p-space-lg bg-surface-container-lowest border border-outline-variant rounded-xl flex items-center justify-between">
-                <div>
-                    <div class="font-label-md text-on-surface-variant uppercase">{{ $label }}</div>
-                    <div class="font-headline-lg text-headline-lg text-on-surface font-data-mono">{{ $value }}</div>
-                </div>
-                <span class="material-symbols-outlined text-[28px] {{ $tone }}">{{ $icon }}</span>
-            </div>
-        @endforeach
-    </div>
-
-    <div class="grid grid-cols-1 xl:grid-cols-3 gap-space-md">
-        <!-- Active orders -->
-        <div class="xl:col-span-2 bg-surface-container-lowest border border-outline-variant rounded-xl flex flex-col">
-            <div class="px-space-lg py-space-md border-b border-outline-variant flex items-center justify-between">
-                <h2 class="font-headline-sm text-headline-sm text-on-surface">Pedidos en curso</h2>
-                <span class="font-label-sm text-label-sm text-on-surface-variant uppercase">Actualización automática</span>
-            </div>
-            <div class="overflow-x-auto">
-                <table class="w-full text-left">
-                    <thead>
-                        <tr class="font-label-md text-on-surface-variant uppercase border-b border-outline-variant">
-                            <th class="px-space-lg py-space-sm font-medium">Pedido</th>
-                            <th class="px-space-sm py-space-sm font-medium">Cliente</th>
-                            <th class="px-space-sm py-space-sm font-medium">Estado</th>
-                            <th class="px-space-sm py-space-sm font-medium">Repartidor</th>
-                            <th class="px-space-lg py-space-sm font-medium text-right">Total</th>
+        <div class="overflow-x-auto">
+            <table class="min-w-full divide-y divide-slate-200">
+                <thead class="border-b border-slate-200 bg-slate-50">
+                    <tr>
+                        <x-ui.table.th>Pedido</x-ui.table.th>
+                        <x-ui.table.th>Cliente</x-ui.table.th>
+                        <x-ui.table.th>Estado</x-ui.table.th>
+                        <x-ui.table.th>Repartidor</x-ui.table.th>
+                        <x-ui.table.th align="right">Total</x-ui.table.th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-slate-100">
+                    @forelse ($activeOrders as $order)
+                        <tr wire:key="order-{{ $order->id }}" class="hover:bg-slate-50/70">
+                            <x-ui.table.td>
+                                <a href="{{ route('owner.orders.show', $order) }}" wire:navigate
+                                   class="font-semibold text-teal-700 hover:underline">{{ $orderLabel($order->id) }}</a>
+                            </x-ui.table.td>
+                            <x-ui.table.td>{{ $order->customer_name }}</x-ui.table.td>
+                            <x-ui.table.td><x-ui.status-badge :status="$order->status" /></x-ui.table.td>
+                            <x-ui.table.td>
+                                @if ($order->deliveryDriver?->user)
+                                    <div class="flex items-center gap-2.5">
+                                        <x-ui.avatar :name="$order->deliveryDriver->user->name" size="sm" />
+                                        <span>{{ $order->deliveryDriver->user->name }}</span>
+                                    </div>
+                                @else
+                                    <span class="italic text-slate-400">Sin asignar</span>
+                                @endif
+                            </x-ui.table.td>
+                            <x-ui.table.td align="right">
+                                <span class="font-semibold tabular-nums text-slate-900">{{ format_cop($order->total) }}</span>
+                            </x-ui.table.td>
                         </tr>
-                    </thead>
-                    <tbody class="divide-y divide-outline-variant">
-                        @forelse ($activeOrders as $order)
-                            @php
-                                $badge = match ($order->status) {
-                                    \App\Enums\OrderStatus::Pending => 'bg-[#FEF3C7] text-[#B45309]',
-                                    \App\Enums\OrderStatus::Offered => 'bg-[#DBEAFE] text-[#1D4ED8]',
-                                    \App\Enums\OrderStatus::Assigned => 'bg-[#EDE9FE] text-[#6D28D9]',
-                                    \App\Enums\OrderStatus::InTransit => 'bg-[#CCFBF1] text-[#0F766E]',
-                                    default => 'bg-surface-container-high text-on-surface-variant',
-                                };
-                            @endphp
-                            <tr wire:key="order-{{ $order->id }}" class="font-body-md">
-                                <td class="px-space-lg py-space-sm">
-                                    <a href="{{ route('owner.orders.show', $order->id) }}" wire:navigate class="text-primary hover:underline font-data-mono">
-                                        #{{ str_pad((string) $order->id, 4, '0', STR_PAD_LEFT) }}
-                                    </a>
-                                </td>
-                                <td class="px-space-sm py-space-sm text-on-surface">{{ $order->customer_name }}</td>
-                                <td class="px-space-sm py-space-sm">
-                                    <span class="px-2 py-0.5 rounded-full font-label-sm text-label-sm {{ $badge }}">{{ $order->status->label() }}</span>
-                                </td>
-                                <td class="px-space-sm py-space-sm text-on-surface-variant">
-                                    {{ $order->deliveryDriver?->user?->name ?? 'Sin asignar' }}
-                                </td>
-                                <td class="px-space-lg py-space-sm text-right font-data-mono text-on-surface">
-                                    $ {{ number_format($order->total, 0, ',', '.') }}
-                                </td>
-                            </tr>
-                        @empty
-                            <tr>
-                                <td colspan="5" class="px-space-lg py-space-xl text-center font-body-md text-on-surface-variant">
-                                    No hay pedidos en curso. Registra uno nuevo para comenzar.
-                                </td>
-                            </tr>
-                        @endforelse
-                    </tbody>
-                </table>
-            </div>
+                    @empty
+                        <tr>
+                            <td colspan="5" class="px-4 py-14 text-center text-sm text-slate-500">
+                                No hay pedidos en curso. Registra uno nuevo para comenzar.
+                            </td>
+                        </tr>
+                    @endforelse
+                </tbody>
+            </table>
         </div>
+    </x-ui.card>
 
-        <!-- Fleet -->
-        <div class="bg-surface-container-lowest border border-outline-variant rounded-xl flex flex-col">
-            <div class="px-space-lg py-space-md border-b border-outline-variant flex items-center justify-between">
-                <h2 class="font-headline-sm text-headline-sm text-on-surface">Flota</h2>
-                <a href="{{ route('owner.drivers.index') }}" wire:navigate class="font-label-sm text-label-sm text-primary hover:underline">Gestionar</a>
+    <div class="grid grid-cols-1 gap-6 xl:grid-cols-2">
+        <x-ui.card padding="none">
+            <div class="flex items-center justify-between border-b border-slate-200 px-6 py-4">
+                <h2 class="text-base font-semibold text-slate-900">Flota</h2>
+                <a href="{{ route('owner.drivers.index') }}" wire:navigate
+                   class="text-sm font-medium text-teal-700 hover:underline">Gestionar</a>
             </div>
-            <div class="divide-y divide-outline-variant max-h-96 overflow-y-auto">
+
+            <div class="divide-y divide-slate-100">
                 @forelse ($drivers as $driver)
-                    @php
-                        $tone = match ($driver->availability) {
-                            \App\Enums\DriverAvailability::Available => 'bg-primary-container',
-                            \App\Enums\DriverAvailability::Busy => 'bg-[#FEF3C7]',
-                            \App\Enums\DriverAvailability::Offline => 'bg-outline-variant',
-                        };
-                    @endphp
-                    <div wire:key="driver-{{ $driver->id }}" class="flex items-center justify-between px-space-lg py-space-sm">
-                        <div class="flex items-center gap-space-sm min-w-0">
-                            <span class="w-2.5 h-2.5 rounded-full {{ $tone }} shrink-0"></span>
+                    <div wire:key="driver-{{ $driver->id }}" class="flex items-center justify-between gap-4 px-6 py-3.5">
+                        <div class="flex min-w-0 items-center gap-3">
+                            <x-ui.avatar :name="$driver->user?->name ?? ''" />
                             <div class="min-w-0">
-                                <div class="font-body-md text-on-surface truncate">{{ $driver->user?->name }}</div>
-                                <div class="font-label-sm text-label-sm text-on-surface-variant">
-                                    {{ $driver->availability->label() }} · {{ $driver->active_orders_count }}/{{ $driver->max_active_orders }}
-                                </div>
+                                <p class="font-medium text-slate-900">{{ $driver->user?->name }}</p>
+                                <p class="mt-0.5 text-xs text-slate-500">
+                                    {{ $driver->last_seen_at ? $driver->last_seen_at->diffForHumans() : 'Sin señal' }}
+                                </p>
                             </div>
                         </div>
-                        <div class="font-label-sm text-label-sm text-on-surface-variant text-right shrink-0">
-                            {{ $driver->last_seen_at ? $driver->last_seen_at->diffForHumans() : 'Sin señal' }}
+
+                        <div class="w-40 shrink-0 space-y-1.5">
+                            <x-ui.availability-badge :availability="$driver->availability" />
+                            <x-ui.capacity-bar :active="$driver->active_orders_count" :max="$driver->max_active_orders" />
                         </div>
                     </div>
                 @empty
-                    <div class="px-space-lg py-space-xl text-center font-body-md text-on-surface-variant">
-                        Aún no tienes repartidores vinculados.
-                    </div>
+                    <p class="px-6 py-10 text-center text-sm text-slate-500">Aún no tienes repartidores vinculados.</p>
                 @endforelse
             </div>
-        </div>
+        </x-ui.card>
+
+        <x-ui.card padding="none">
+            <div class="flex items-center justify-between gap-4 border-b border-slate-200 px-6 py-4">
+                <div class="min-w-0">
+                    <h2 class="text-base font-semibold text-slate-900">Alertas de inventario</h2>
+                    @if ($kpis['stockBajo'] > 0)
+                        <p class="mt-0.5 text-xs text-slate-500">
+                            <span class="font-medium tabular-nums text-slate-700">{{ $kpis['stockBajo'] }}</span> producto(s) por debajo del stock mínimo
+                        </p>
+                    @endif
+                </div>
+                <a href="{{ route('owner.inventory.index') }}" wire:navigate
+                   class="shrink-0 text-sm font-medium text-teal-700 hover:underline">Ver inventario</a>
+            </div>
+
+            <div class="divide-y divide-slate-100">
+                @forelse ($lowStockProducts as $product)
+                    @php $out = $product->stock <= 0; @endphp
+                    <div wire:key="low-{{ $product->id }}" class="flex items-center justify-between gap-4 px-6 py-3.5">
+                        <div class="min-w-0">
+                            <p class="font-medium text-slate-900">{{ $product->name }}</p>
+                            <p class="mt-0.5 text-xs text-slate-500">
+                                Stock <span class="font-medium tabular-nums text-slate-700">{{ $product->stock }}</span> {{ $product->unit }}
+                                · mínimo <span class="font-medium tabular-nums text-slate-700">{{ $product->min_stock }}</span>
+                            </p>
+                        </div>
+
+                        <x-ui.badge :color="$out ? 'red' : 'amber'">{{ $out ? 'Agotado' : 'Stock bajo' }}</x-ui.badge>
+                    </div>
+                @empty
+                    <p class="px-6 py-10 text-center text-sm text-slate-500">Todo el inventario está por encima del mínimo.</p>
+                @endforelse
+            </div>
+        </x-ui.card>
     </div>
 
-    <!-- Timeline -->
-    <div class="mt-space-md bg-surface-container-lowest border border-outline-variant rounded-xl">
-        <div class="px-space-lg py-space-md border-b border-outline-variant">
-            <h2 class="font-headline-sm text-headline-sm text-on-surface">Actividad reciente</h2>
+    <x-ui.card padding="none">
+        <div class="border-b border-slate-200 px-6 py-4">
+            <h2 class="text-base font-semibold text-slate-900">Actividad reciente</h2>
         </div>
-        <ol class="p-space-lg space-y-space-md">
+
+        <ol class="space-y-4 p-6">
             @forelse ($timeline as $log)
-                <li wire:key="log-{{ $log->id }}" class="flex items-start gap-space-sm">
-                    <span class="mt-1 w-2.5 h-2.5 rounded-full bg-primary-container shrink-0"></span>
-                    <div>
-                        <div class="font-body-md text-on-surface">
-                            <span class="font-data-mono">#{{ str_pad((string) $log->order_id, 4, '0', STR_PAD_LEFT) }}</span>
-                            <span class="font-label-md uppercase text-primary">{{ $log->from }} → {{ $log->to }}</span>
-                        </div>
-                        <div class="font-label-sm text-label-sm text-on-surface-variant">
-                            {{ $log->created_at->format('d/m H:i') }}
-                            · {{ $log->user?->name ?? 'Sistema' }}
-                            @if ($log->reason) · {{ $log->reason }} @endif
-                        </div>
-                    </div>
+                <li wire:key="log-{{ $log->id }}" class="relative border-l border-slate-200 pl-4">
+                    <span class="absolute -left-[5px] top-1.5 h-2 w-2 rounded-full bg-teal-600" aria-hidden="true"></span>
+                    <p class="text-sm font-medium text-slate-900">
+                        {{ $orderLabel($log->order_id) }}
+                        <span class="text-slate-500">
+                            {{ \App\Enums\OrderStatus::tryFrom($log->from)?->label() ?? $log->from }}
+                            <span class="text-slate-400" aria-hidden="true">→</span>
+                            {{ \App\Enums\OrderStatus::tryFrom($log->to)?->label() ?? $log->to }}
+                        </span>
+                    </p>
+                    <p class="mt-0.5 text-xs text-slate-500">
+                        {{ format_datetime($log->created_at) }} · {{ $log->user?->name ?? 'Sistema' }}
+                    </p>
+                    @if ($log->reason)
+                        <p class="mt-0.5 text-xs text-slate-500">{{ $log->reason }}</p>
+                    @endif
                 </li>
             @empty
-                <li class="font-body-md text-on-surface-variant">Sin movimientos registrados todavía.</li>
+                <li class="text-sm text-slate-500">Sin movimientos registrados todavía.</li>
             @endforelse
         </ol>
-    </div>
+    </x-ui.card>
 </div>

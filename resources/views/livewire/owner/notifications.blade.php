@@ -1,85 +1,99 @@
-<div class="flex flex-col w-full pb-16">
-    @if (session('success'))
-        <div class="w-full bg-primary-fixed text-on-primary-fixed px-space-lg py-space-sm flex items-center gap-space-sm mb-space-md">
-            <span class="material-symbols-outlined text-[20px]">check_circle</span>
-            <span class="font-body-md">{{ session('success') }}</span>
-        </div>
+﻿<div class="space-y-6">
+    <x-ui.toast />
+
+    <x-ui.page-header title="Centro de Notificaciones"
+                      :description="$totalCount . ' en total · ' . $unreadCount . ' sin leer'">
+        <x-slot:actions>
+            @if ($unreadCount > 0)
+                <x-ui.button variant="secondary" wire:click="markAllAsRead">
+                    <x-icon name="check" />
+                    Marcar todas como leídas
+                </x-ui.button>
+            @else
+                <x-ui.button variant="secondary" disabled>
+                    <x-icon name="check" />
+                    Marcar todas como leídas
+                </x-ui.button>
+            @endif
+        </x-slot:actions>
+    </x-ui.page-header>
+
+    <x-ui.tabs>
+        <x-ui.tab :active="$filter === 'todas'" :count="$totalCount"
+                  wire:click="$set('filter', 'todas')">Todas</x-ui.tab>
+        <x-ui.tab :active="$filter === 'no_leidas'" :count="$unreadCount"
+                  wire:click="$set('filter', 'no_leidas')">No leídas</x-ui.tab>
+        <x-ui.tab :active="$filter === 'leidas'" :count="$totalCount - $unreadCount"
+                  wire:click="$set('filter', 'leidas')">Leídas</x-ui.tab>
+    </x-ui.tabs>
+
+    @if ($notifications->isEmpty())
+        <x-ui.empty-state icon="bell" title="No hay notificaciones para mostrar."
+                          description="Aquí verás los avisos de tus pedidos, inventario y repartidores." />
+    @else
+        <x-ui.card padding="none">
+            <div class="divide-y divide-slate-100">
+                @foreach ($notifications as $notification)
+                    @php
+                        $data = $notification->data;
+                        $unread = ! $notification->read_at;
+                    @endphp
+                    <div wire:key="notif-{{ $notification->id }}"
+                         class="flex items-start gap-4 px-6 py-4 {{ $unread ? 'bg-teal-50/40' : '' }}">
+                        <span class="mt-0.5 flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-white ring-1 ring-slate-200" aria-hidden="true">
+                            <x-icon :name="\App\Support\NotificationPresenter::icon($data)"
+                                    class="{{ \App\Support\NotificationPresenter::tone($data) }}" />
+                        </span>
+
+                        <div class="min-w-0 flex-1">
+                            <p class="text-sm {{ $unread ? 'font-semibold text-slate-900' : 'text-slate-700' }}">
+                                {{ \App\Support\NotificationPresenter::message($data) }}
+                            </p>
+
+                            <div class="mt-1.5 flex flex-wrap items-center gap-3">
+                                <span class="text-xs text-slate-500">{{ format_datetime($notification->created_at) }}</span>
+                                <span class="text-xs text-slate-400">{{ $notification->created_at->diffForHumans() }}</span>
+
+                                @if ($unread)
+                                    <x-ui.badge color="teal">Sin leer</x-ui.badge>
+                                @endif
+                            </div>
+                        </div>
+
+                        <div class="flex shrink-0 items-center gap-1">
+                            @if (\App\Support\NotificationPresenter::url($data))
+                                <x-ui.button variant="ghost" size="sm" class="w-8 px-0 hover:no-underline"
+                                             wire:click="openNotification('{{ $notification->id }}')"
+                                             aria-label="Ver notificación" title="Ver">
+                                    <x-icon name="eye" class="h-4 w-4" />
+                                </x-ui.button>
+                            @endif
+
+                            @if ($unread)
+                                <x-ui.button variant="ghost" size="sm" class="w-8 px-0 text-slate-500 hover:text-slate-700 hover:no-underline"
+                                             wire:click="markAsRead('{{ $notification->id }}')"
+                                             aria-label="Marcar como leída" title="Marcar como leída">
+                                    <x-icon name="envelope-open" class="h-4 w-4" />
+                                </x-ui.button>
+                            @else
+                                <x-ui.button variant="ghost" size="sm" class="w-8 px-0 text-slate-500 hover:text-slate-700 hover:no-underline"
+                                             wire:click="markAsUnread('{{ $notification->id }}')"
+                                             aria-label="Marcar como no leída" title="Marcar como no leída">
+                                    <x-icon name="envelope" class="h-4 w-4" />
+                                </x-ui.button>
+                            @endif
+
+                            <x-ui.button variant="ghost" size="sm" class="w-8 px-0 text-red-600 hover:text-red-700 hover:no-underline"
+                                         wire:click="delete('{{ $notification->id }}')"
+                                         aria-label="Eliminar notificación" title="Eliminar">
+                                <x-icon name="trash" class="h-4 w-4" />
+                            </x-ui.button>
+                        </div>
+                    </div>
+                @endforeach
+            </div>
+
+            {{ $notifications->links('partials.pagination', ['label' => 'notificaciones']) }}
+        </x-ui.card>
     @endif
-
-    <div class="flex flex-col md:flex-row md:items-center justify-between gap-space-md mb-space-lg">
-        <div>
-            <h1 class="font-headline-xl text-headline-xl text-on-surface">Centro de Notificaciones</h1>
-            <p class="font-body-md text-on-surface-variant">
-                {{ $totalCount }} en total · {{ $unreadCount }} sin leer
-            </p>
-        </div>
-        <div class="flex items-center gap-space-sm">
-            <button type="button" wire:click="markAllAsRead"
-                    class="px-space-md py-space-sm border border-outline-variant font-label-lg rounded-lg hover:bg-surface-container transition-colors flex items-center gap-space-xs">
-                <span class="material-symbols-outlined text-[18px]">done_all</span>
-                Marcar todas como leídas
-            </button>
-        </div>
-    </div>
-
-    <div class="flex items-center gap-space-xs mb-space-md">
-        @foreach (['todas' => 'Todas', 'no_leidas' => 'No leídas', 'leidas' => 'Leídas'] as $value => $label)
-            <button type="button" wire:click="$set('filter', '{{ $value }}')"
-                    class="px-space-md py-space-xs rounded-full font-label-lg transition-colors {{ $filter === $value ? 'bg-primary text-on-primary' : 'bg-surface-container text-on-surface-variant hover:bg-surface-container-high' }}">
-                {{ $label }}
-            </button>
-        @endforeach
-    </div>
-
-    <div class="bg-surface-container-lowest border border-outline-variant divide-y divide-outline-variant">
-        @forelse ($notifications as $notification)
-            @php $data = $notification->data; @endphp
-            <div wire:key="notif-{{ $notification->id }}"
-                 class="flex items-start gap-space-md px-space-lg py-space-md {{ $notification->read_at ? '' : 'bg-primary-container/5' }}">
-                <span class="material-symbols-outlined text-[24px] mt-0.5 {{ \App\Support\NotificationPresenter::tone($data) }}">
-                    {{ \App\Support\NotificationPresenter::icon($data) }}
-                </span>
-                <div class="flex-1 min-w-0">
-                    <p class="font-body-md text-on-surface {{ $notification->read_at ? '' : 'font-medium' }}">
-                        {{ \App\Support\NotificationPresenter::message($data) }}
-                    </p>
-                    <span class="font-label-sm text-label-sm text-on-surface-variant">
-                        {{ $notification->created_at->format('d/m/Y H:i') }} · {{ $notification->created_at->diffForHumans() }}
-                        @if (! $notification->read_at) · <span class="text-primary">Sin leer</span> @endif
-                    </span>
-                </div>
-                <div class="flex items-center gap-space-xs shrink-0">
-                    @if (\App\Support\NotificationPresenter::url($data))
-                        <button type="button" wire:click="openNotification('{{ $notification->id }}')"
-                                class="p-1.5 text-primary hover:bg-surface-container rounded-lg" title="Ver">
-                            <span class="material-symbols-outlined text-[20px]">open_in_new</span>
-                        </button>
-                    @endif
-                    @if ($notification->read_at)
-                        <button type="button" wire:click="markAsUnread('{{ $notification->id }}')"
-                                class="p-1.5 text-on-surface-variant hover:bg-surface-container rounded-lg" title="Marcar como no leída">
-                            <span class="material-symbols-outlined text-[20px]">mark_email_unread</span>
-                        </button>
-                    @else
-                        <button type="button" wire:click="markAsRead('{{ $notification->id }}')"
-                                class="p-1.5 text-on-surface-variant hover:bg-surface-container rounded-lg" title="Marcar como leída">
-                            <span class="material-symbols-outlined text-[20px]">mark_email_read</span>
-                        </button>
-                    @endif
-                    <button type="button" wire:click="delete('{{ $notification->id }}')"
-                            class="p-1.5 text-on-surface-variant hover:text-error hover:bg-surface-container rounded-lg" title="Eliminar">
-                        <span class="material-symbols-outlined text-[20px]">delete</span>
-                    </button>
-                </div>
-            </div>
-        @empty
-            <div class="px-space-lg py-space-xl text-center font-body-md text-on-surface-variant">
-                No hay notificaciones para mostrar.
-            </div>
-        @endforelse
-    </div>
-
-    <div class="mt-space-md">
-        {{ $notifications->links() }}
-    </div>
 </div>

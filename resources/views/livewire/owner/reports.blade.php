@@ -1,128 +1,113 @@
-<div class="flex flex-col w-full pb-16">
-    <div class="flex flex-col md:flex-row md:items-center justify-between gap-space-md mb-space-lg">
-        <div>
-            <h1 class="font-headline-xl text-headline-xl text-on-surface">Reportes</h1>
-            <p class="font-body-md text-on-surface-variant">Genera reportes de pedidos y repartidores en PDF con filtros</p>
-        </div>
-    </div>
+﻿<div class="space-y-6">
+    <x-ui.page-header title="Reportes" description="Genera reportes de pedidos y repartidores en PDF con filtros." />
 
-    <div class="bg-surface-container-lowest border border-outline-variant rounded-xl p-space-lg mb-space-md">
-        <h2 class="font-headline-sm text-headline-sm text-on-surface mb-space-md">Filtros</h2>
-        <div class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-5 gap-space-md">
-            <div class="flex flex-col gap-space-xs">
-                <label class="font-label-md text-on-surface-variant uppercase">Desde</label>
-                <input type="date" wire:model.live="desde"
-                       class="bg-surface border border-outline-variant px-space-sm py-space-xs text-on-surface font-body-md rounded-lg focus:outline-none focus:border-on-surface"/>
-            </div>
-            <div class="flex flex-col gap-space-xs">
-                <label class="font-label-md text-on-surface-variant uppercase">Hasta</label>
-                <input type="date" wire:model.live="hasta"
-                       class="bg-surface border border-outline-variant px-space-sm py-space-xs text-on-surface font-body-md rounded-lg focus:outline-none focus:border-on-surface"/>
-            </div>
-            <div class="flex flex-col gap-space-xs">
-                <label class="font-label-md text-on-surface-variant uppercase">Estado</label>
-                <select wire:model.live="estado"
-                        class="bg-surface border border-outline-variant px-space-sm py-space-xs text-on-surface font-body-md rounded-lg focus:outline-none focus:border-on-surface">
-                    <option value="todos">Todos</option>
-                    @foreach ($statuses as $status)
-                        <option value="{{ $status->value }}">{{ $status->label() }}</option>
-                    @endforeach
-                </select>
-            </div>
-            <div class="flex flex-col gap-space-xs">
-                <label class="font-label-md text-on-surface-variant uppercase">Repartidor</label>
-                <select wire:model.live="driver_id"
-                        class="bg-surface border border-outline-variant px-space-sm py-space-xs text-on-surface font-body-md rounded-lg focus:outline-none focus:border-on-surface">
-                    <option value="">Todos</option>
-                    @foreach ($driverOptions as $driver)
-                        <option value="{{ $driver->id }}">{{ $driver->user?->name }}</option>
-                    @endforeach
-                </select>
-            </div>
-            <div class="flex flex-col gap-space-xs">
-                <label class="font-label-md text-on-surface-variant uppercase">Método de pago</label>
-                <select wire:model.live="payment_method"
-                        class="bg-surface border border-outline-variant px-space-sm py-space-xs text-on-surface font-body-md rounded-lg focus:outline-none focus:border-on-surface">
-                    <option value="todos">Todos</option>
-                    @foreach ($paymentMethods as $method)
-                        <option value="{{ $method }}">{{ $method }}</option>
-                    @endforeach
-                </select>
-            </div>
+    <x-ui.card>
+        <h2 class="text-base font-semibold text-slate-900">Filtros</h2>
+
+        <div class="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-5">
+            <x-ui.input name="desde" type="date" label="Desde" wire:model.live="desde" />
+            <x-ui.input name="hasta" type="date" label="Hasta" wire:model.live="hasta" />
+
+            <x-ui.select name="estado" label="Estado" wire:model.live="estado">
+                <option value="todos">Todos</option>
+                @foreach ($statuses as $status)
+                    <option value="{{ $status->value }}">{{ $status->label() }}</option>
+                @endforeach
+            </x-ui.select>
+
+            <x-ui.select name="driver_id" label="Repartidor" wire:model.live="driver_id">
+                <option value="">Todos</option>
+                @foreach ($driverOptions as $driver)
+                    <option value="{{ $driver->id }}">{{ $driver->user?->name }}</option>
+                @endforeach
+            </x-ui.select>
+
+            <x-ui.select name="payment_method" label="Método de pago" wire:model.live="payment_method">
+                <option value="todos">Todos</option>
+                @foreach ($paymentMethods as $method)
+                    <option value="{{ $method }}">{{ $method }}</option>
+                @endforeach
+            </x-ui.select>
         </div>
 
-        <div class="flex flex-wrap items-center gap-space-sm mt-space-md">
-            <button type="button" wire:click="resetFilters"
-                    class="border border-outline-variant px-space-md py-space-sm font-label-lg rounded-lg hover:bg-surface-container transition-colors">
+        <div class="mt-5 flex flex-wrap items-center gap-3 border-t border-slate-200 pt-5">
+            <x-ui.button variant="secondary" wire:click="resetFilters">
+                <x-icon name="arrow-uturn-left" />
                 Limpiar filtros
-            </button>
+            </x-ui.button>
 
             @if ($validRange)
-                <a href="{{ route('owner.reports.orders', array_filter($filters, fn ($value) => $value !== null && $value !== 'todos')) }}"
-                   class="bg-primary text-on-primary px-space-md py-space-sm font-label-lg rounded-lg flex items-center gap-space-xs hover:opacity-90 transition-opacity">
-                    <span class="material-symbols-outlined text-[18px]">picture_as_pdf</span>
+                <x-ui.button :href="route('owner.reports.orders', array_filter($filters, fn ($value) => $value !== null && $value !== 'todos'))">
+                    <x-icon name="arrow-down-tray" />
                     Descargar pedidos (PDF)
-                </a>
-                <a href="{{ route('owner.reports.drivers', ['desde' => $filters['desde'], 'hasta' => $filters['hasta']]) }}"
-                   class="border border-outline-variant px-space-md py-space-sm font-label-lg rounded-lg flex items-center gap-space-xs hover:bg-surface-container transition-colors">
-                    <span class="material-symbols-outlined text-[18px]">badge</span>
+                </x-ui.button>
+
+                <x-ui.button variant="secondary"
+                             :href="route('owner.reports.drivers', ['desde' => $filters['desde'], 'hasta' => $filters['hasta']])">
+                    <x-icon name="document-text" />
                     Descargar repartidores (PDF)
-                </a>
-            @else
-                <span class="font-body-sm text-error flex items-center gap-space-xs">
-                    <span class="material-symbols-outlined text-[18px]">error</span>
-                    La fecha final debe ser igual o posterior a la inicial.
-                </span>
+                </x-ui.button>
             @endif
         </div>
-    </div>
+
+        @if (! $validRange)
+            <x-ui.alert type="error" class="mt-4">
+                La fecha final debe ser igual o posterior a la inicial.
+            </x-ui.alert>
+        @endif
+    </x-ui.card>
 
     @if ($validRange)
-        <div class="grid grid-cols-1 sm:grid-cols-3 gap-space-md mb-space-md">
-            <div class="p-space-md bg-surface-container-lowest border border-outline-variant rounded-xl">
-                <p class="font-label-md text-label-md text-on-surface-variant uppercase">Pedidos en el periodo</p>
-                <h3 class="font-headline-lg text-headline-lg text-on-surface font-data-mono">{{ $orders->count() }}</h3>
-            </div>
-            <div class="p-space-md bg-surface-container-lowest border border-outline-variant rounded-xl">
-                <p class="font-label-md text-label-md text-on-surface-variant uppercase">Valor total</p>
-                <h3 class="font-headline-lg text-headline-lg text-on-surface font-data-mono">$ {{ number_format($orderTotal, 0, ',', '.') }}</h3>
-            </div>
-            <div class="p-space-md bg-surface-container-lowest border border-outline-variant rounded-xl">
-                <p class="font-label-md text-label-md text-on-surface-variant uppercase">Repartidores</p>
-                <h3 class="font-headline-lg text-headline-lg text-on-surface font-data-mono">{{ $drivers->count() }}</h3>
-            </div>
+        <div class="grid grid-cols-1 gap-6 sm:grid-cols-3">
+            <x-ui.kpi label="Pedidos en el periodo" icon="clipboard-document-list">{{ $orders->count() }}</x-ui.kpi>
+            <x-ui.kpi label="Valor total" icon="banknotes">{{ format_cop($orderTotal) }}</x-ui.kpi>
+            <x-ui.kpi label="Repartidores" icon="users">{{ $drivers->count() }}</x-ui.kpi>
         </div>
 
-        <div class="bg-surface-container-lowest border border-outline-variant rounded-xl overflow-hidden">
-            <div class="px-space-lg py-space-md border-b border-outline-variant flex items-center justify-between">
-                <h2 class="font-headline-sm text-headline-sm text-on-surface">Vista previa de pedidos</h2>
-                <span class="font-label-sm text-label-sm text-on-surface-variant uppercase">Primeros 10 registros</span>
+        <x-ui.card padding="none">
+            <div class="flex items-center justify-between gap-4 border-b border-slate-200 px-6 py-4">
+                <h2 class="text-base font-semibold text-slate-900">Vista previa de pedidos</h2>
+                <span class="text-xs text-slate-500">Primeros 10 registros</span>
             </div>
+
             <div class="overflow-x-auto">
-                <table class="w-full text-left">
-                    <thead>
-                        <tr class="font-label-md text-on-surface-variant uppercase border-b border-outline-variant">
-                            <th class="px-space-lg py-space-sm font-medium">#</th>
-                            <th class="px-space-sm py-space-sm font-medium">Fecha</th>
-                            <th class="px-space-sm py-space-sm font-medium">Cliente</th>
-                            <th class="px-space-sm py-space-sm font-medium">Estado</th>
-                            <th class="px-space-sm py-space-sm font-medium">Repartidor</th>
-                            <th class="px-space-lg py-space-sm font-medium text-right">Total</th>
+                <table class="min-w-full divide-y divide-slate-200">
+                    <thead class="border-b border-slate-200 bg-slate-50">
+                        <tr>
+                            <x-ui.table.th>Pedido</x-ui.table.th>
+                            <x-ui.table.th>Fecha</x-ui.table.th>
+                            <x-ui.table.th>Cliente</x-ui.table.th>
+                            <x-ui.table.th>Estado</x-ui.table.th>
+                            <x-ui.table.th>Repartidor</x-ui.table.th>
+                            <x-ui.table.th align="right">Total</x-ui.table.th>
                         </tr>
                     </thead>
-                    <tbody class="divide-y divide-outline-variant">
+                    <tbody class="divide-y divide-slate-100">
                         @forelse ($orders->take(10) as $order)
-                            <tr wire:key="report-order-{{ $order->id }}" class="font-body-md">
-                                <td class="px-space-lg py-space-sm font-data-mono">{{ str_pad((string) $order->id, 4, '0', STR_PAD_LEFT) }}</td>
-                                <td class="px-space-sm py-space-sm text-on-surface-variant">{{ $order->created_at->format('d/m/Y H:i') }}</td>
-                                <td class="px-space-sm py-space-sm text-on-surface">{{ $order->customer_name }}</td>
-                                <td class="px-space-sm py-space-sm">{{ $order->status->label() }}</td>
-                                <td class="px-space-sm py-space-sm text-on-surface-variant">{{ $order->deliveryDriver?->user?->name ?? '—' }}</td>
-                                <td class="px-space-lg py-space-sm text-right font-data-mono">$ {{ number_format($order->total, 0, ',', '.') }}</td>
+                            <tr wire:key="report-order-{{ $order->id }}" class="hover:bg-slate-50/70">
+                                <x-ui.table.td>
+                                    <a href="{{ route('owner.orders.show', $order) }}" wire:navigate
+                                       class="font-semibold text-teal-700 hover:underline">#{{ str_pad((string) $order->id, 4, '0', STR_PAD_LEFT) }}</a>
+                                </x-ui.table.td>
+                                <x-ui.table.td>
+                                    <span class="text-xs text-slate-500">{{ format_datetime($order->created_at) }}</span>
+                                </x-ui.table.td>
+                                <x-ui.table.td>{{ $order->customer_name }}</x-ui.table.td>
+                                <x-ui.table.td><x-ui.status-badge :status="$order->status" /></x-ui.table.td>
+                                <x-ui.table.td>
+                                    @if ($order->deliveryDriver?->user)
+                                        {{ $order->deliveryDriver->user->name }}
+                                    @else
+                                        <span class="italic text-slate-400">Sin asignar</span>
+                                    @endif
+                                </x-ui.table.td>
+                                <x-ui.table.td align="right">
+                                    <span class="font-semibold tabular-nums text-slate-900">{{ format_cop($order->total) }}</span>
+                                </x-ui.table.td>
                             </tr>
                         @empty
                             <tr>
-                                <td colspan="6" class="px-space-lg py-space-xl text-center font-body-md text-on-surface-variant">
+                                <td colspan="6" class="px-4 py-14 text-center text-sm text-slate-500">
                                     No hay pedidos para los filtros seleccionados.
                                 </td>
                             </tr>
@@ -130,6 +115,6 @@
                     </tbody>
                 </table>
             </div>
-        </div>
+        </x-ui.card>
     @endif
 </div>
