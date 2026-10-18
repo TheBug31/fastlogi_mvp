@@ -8,7 +8,7 @@ FastLogi es una plataforma SaaS multi-tenant diseñada para pequeños y medianos
 
 - **Framework:** Laravel 12.0
 - **Frontend Reactivo & Componentes:** Livewire v3.8 + Alpine.js
-- **Motor de Plantillas & Diseño:** Blade + Tailwind CSS v3.4 (con tokens y tema de Stitch) compilado con Vite
+- **Motor de Plantillas & Diseño:** Blade + Tailwind CSS v3.4.19 (vía PostCSS) con el sistema de diseño propio `<x-ui.*>` descrito en `doc/UI_GUIDE.md` (sustituye al tema de Stitch), tipografía Inter e iconos `blade-ui-kit/blade-heroicons` (outline) servidos por `<x-icon>`; assets compilados con Vite
 - **Lenguaje:** PHP 8.4.0 (NTS Visual C++ 2019 x64)
 - **Base de Datos:** MySQL 8.4.3 Community Server (`fastlogi` para desarrollo, `fastlogi_test` para pruebas)
 - **Pruebas:** Pest PHP v3.8 + PHPUnit 11.5.56
@@ -140,6 +140,10 @@ FastLogi es una plataforma SaaS multi-tenant diseñada para pequeños y medianos
 
 **Fecha:** 2026-10-15 · **Último commit verificado:** `feaf194`
 
+> **Nota (2026-10-17):** esta sección documenta el cierre del MVP funcional. El estado vigente tras el
+> Post-MVP (§7) y el rediseño visual en curso (§8) es **182 tests / 568 aserciones en verde**; el
+> último commit verificado es `bd9e7da` (UI U5).
+
 ### 6.1 Suite automatizada
 
 - `php artisan test` → **169 tests, 548 aserciones, todas en verde** (base de datos MySQL `fastlogi_test`).
@@ -172,3 +176,158 @@ Levantado `php artisan serve` y navegado con sesión y cookies reales (login por
 - `MAIL_MAILER=log`: los correos de alerta se escriben en `storage/logs`, no se envían realmente (configuración de desarrollo del SRS).
 - Sin push/WebSockets (por diseño): notificaciones por *polling* (campana 10 s, dashboard 15 s).
 - El enlace `public/storage` no se crea; no se usa (sin subida de archivos, PDFs en memoria). Si se requiere: `php artisan storage:link`.
+
+---
+
+## 7. Post-MVP: Identificadores legibles (slug)
+
+**Fecha:** 2026-10-15
+
+Se añadió un `slug` a **todas las entidades del dominio** con generación automática, sin cambios de
+alcance funcional (no introduce nuevos RF).
+
+- Trait `app/Models/Traits/HasSlug.php`: genera el slug en `creating` desde un atributo fuente
+  (`name` por defecto), garantiza unicidad con sufijo numérico (`-2`, `-3`, …), lo regenera al
+  cambiar la fuente, normaliza valores enum (`BackedEnum`/`UnitEnum`) y define
+  `getRouteKeyName() === 'slug'`.
+- Unicidad **global** (`businesses`, `users`, `packages` y las tablas de bitácora) y **por tenant**
+  (`business_id`) en `delivery_drivers`, `products` y `orders`.
+- Fuentes: `name` (negocios/usuarios/productos), nombre del usuario vinculado (repartidores),
+  `customer_name` (pedidos), `tracking_code` (paquetes) y compuestos descriptivos en
+  `order_items` / `inventory_movements` / `package_scans` / `order_status_logs`.
+- Migraciones `2026_10_15_000013_add_slug_to_core_tables` y
+  `2026_10_15_000014_add_slug_to_log_tables` (columna nullable + índice único; nullable para no
+  romper filas preexistentes).
+- Rutas: las URLs de pedidos usan el slug (`/negocio/pedidos/{slug}`, `/repartidor/pedidos/{slug}`)
+  mediante el scope `Order::whereKeyOrSlug()`, que además sigue resolviendo el id numérico (enlaces
+  antiguos). Enlaces actualizados en `Owner\Dashboard`, `Driver\Routes` y `NotificationPresenter`.
+- Comando `php artisan slugs:backfill`: rellena de forma **no destructiva e idempotente** el slug de
+  filas con `slug = NULL` (no reescribe los existentes).
+- Pruebas: `tests/Feature/HasSlugTest.php` (13 pruebas). Suite total: **182 tests / 568 aserciones en
+  verde**. Formateo con Pint aplicado a los archivos tocados.
+
+---
+
+## 8. Rediseño visual (en curso)
+
+**Inicio:** 2026-10-17 · **Fuente de verdad visual:** `doc/UI_GUIDE.md` (gana ante cualquier conflicto)
+
+Se rediseña **solo la capa visual**: vistas Blade, CSS, layouts y componentes `<x-ui.*>`. No se toca
+lógica de negocio, migraciones, modelos, servicios, jobs, policies ni rutas; se conservan nombres de
+ruta, propiedades/métodos públicos de Livewire, atributos `wire:*`, nombres de campo, mensajes de
+validación y todo lo que asertan los tests.
+
+- Se descarta por completo `doc/fastlogi-views/` (diseño antiguo de Stitch). Las referencias visuales
+  vivirán en `doc/ui-reference/` (todavía no disponibles).
+- Prohibido: CDN de Tailwind, datos de ejemplo escritos a mano en las vistas, hex a mano (salvo el SVG
+  del logo y las plantillas dompdf `reports/orders` y `reports/drivers`), y pintar estados fuera de
+  `status-badge` / `availability-badge`.
+- Accesibilidad: `role="dialog"` + `aria-modal`, foco visible, cierre con Escape y `aria-current`.
+- Autorizaciones dadas por el usuario: eliminar `welcome.blade.php`, adaptar
+  `App\Support\NotificationPresenter` (solo presentación), registrar helpers vía `autoload.files`,
+  copiar `doc/brand/` → `public/images/brand/` y añadir la dependencia
+  `blade-ui-kit/blade-heroicons`. **No** tocar el paquete `@tailwindcss/vite` (está instalado en v4
+  pero **no** registrado en `vite.config.js`; Tailwind 3 compila vía PostCSS).
+
+### 8.1 Fases y estado
+
+- [x] **U0 · Diagnóstico (solo lectura).** Inventario de vistas y componentes Livewire, versión de
+  Tailwind y línea base de pruebas (182 tests / 568 aserciones).
+- [x] **U1 · Base del sistema de diseño.** Commit `ca309f9` (50 archivos).
+  - `tailwind.config.js` con los tokens de la guía (`canvas`, `sidebar`, `sidebar-active`, Inter).
+  - `resources/css/app.css` y `partials/head.blade.php` (Inter + favicons de marca; sin Material
+    Symbols ni Geist).
+  - `app/helpers.php` (`format_cop`, `format_datetime`, `format_date`, `format_time`) registrado en
+    `autoload.files` de `composer.json`.
+  - 24 componentes en `resources/views/components/` (`icon` + `ui/*`): button, badge, card, input,
+    select, textarea, checkbox, tabs/tab, table/th/td, kpi, alert, modal, drawer, toast,
+    capacity-bar, avatar, empty-state, page-header, status-badge y availability-badge.
+  - 5 layouts: `base`, `owner`, `superadmin`, `driver` y `guest`.
+  - `doc/brand/` copiado a `public/images/brand/`; `welcome.blade.php` eliminado.
+  - `NotificationPresenter` adaptado (iconos heroicon outline y colores literales).
+  - Dependencia nueva: `blade-ui-kit/blade-heroicons ^2.7` (outline, 20 px, trazo 1.75). Se desactiva
+    el registro automático de componentes de `blade-icons` (`config/blade-icons.php`,
+    `components.disabled`) y todos los iconos se usan como `<x-icon name="...">`.
+- [x] **U2 · Inicio de sesión.** Commit `171f0f0` (9 archivos).
+  - `auth/login.blade.php` reconstruido sobre el layout `guest`: campos correo-o-teléfono y contraseña
+    (con botón mostrar/ocultar en Alpine), "Recordar sesión", botón, la nota "Las cuentas son creadas
+    por el administrador de la plataforma" y las alertas roja/ámbar de la guía.
+  - Se eliminan el selector de "modo demo", el logo remoto, la barra de telemetría inventada y los
+    enlaces muertos. Sin registro, sin "olvidé mi contraseña" y sin login social.
+- [x] **U3 · Pedidos del dueño.** Commit `7a46ac4` (3 archivos).
+  - `livewire/owner/orders.blade.php` reconstruido con el sistema de diseño: cabecera + "Nuevo pedido",
+    aviso ámbar de stock bajo con enlace "Ver inventario", tarjeta con pestañas y contadores, barra de
+    filtros, tabla (`# Pedido`, cliente + teléfono, dirección, total + pago, repartidor, estado, acción)
+    y paginación con vista propia `partials/pagination.blade.php`.
+  - Se retiran los 4 KPIs (viven en el dashboard) y las acciones de la tabla siguen la guía (Ofrecer /
+    "Responde en 0:54" + Retirar / Ver detalle / motivo del cancelado / Confirmar devolución); Cancelar,
+    Reasignar y Registrar incidencia pasan al drawer de detalle.
+  - `Owner\Orders::render()` solo suma dos datos de lectura (`statusCounts` para los contadores y
+    `actionOrder` para el resumen de los modales); props públicas, métodos y validaciones intactos.
+- [x] **U4 · Resto del panel del dueño.** Commit `1294d16` (9 archivos).
+  - `livewire/owner/dashboard.blade.php`: KPIs de la guía (Ventas de hoy, Pedidos entregados, Tiempo
+    promedio de entrega, Pedidos activos), tabla "Pedidos en curso", columnas "Flota" (avatar, badge de
+    disponibilidad, barra de capacidad) y "Alertas de inventario" (producto, stock, mínimo, badge,
+    "Ver inventario") y timeline "Actividad reciente"; se retiró el aviso ámbar suelto (su función pasa
+    a la tarjeta de alertas).
+  - `livewire/owner/inventory.blade.php`: cabecera + "Nuevo producto", aviso ámbar "Atención de
+    inventario", barra de filtros (búsqueda + estado), tabla con producto/código, precio, stock, mínimo,
+    unidad, badge de estado y acciones, más modal de producto con "El stock no puede ser negativo".
+  - `livewire/owner/drivers.blade.php`: alerta roja "Sin conexión con pedidos asignados" + "Ver pedidos",
+    tabla (repartidor, disponibilidad, pedidos activos, última conexión en ámbar si supera el umbral,
+    límite, acciones), y modales de alta/edición con slider 1–8 y contraseña con mostrar/ocultar.
+  - `livewire/owner/reports.blade.php`: filtros, botones "Descargar pedidos (PDF)" / "Descargar
+    repartidores (PDF)", KPIs del periodo y vista previa paginada.
+  - `livewire/owner/notifications.blade.php`: pestañas Todas/No leídas/Leídas con contadores, filas con
+    icono por tono, "Sin leer", acciones ver/marcar/eliminar y vacío.
+  - `Owner\Dashboard::render()` solo suma dos datos de lectura (`promedioEntrega` = media de
+    `created_at`→`updated_at` de los entregados y `lowStockProducts` para las alertas). `x-ui.button`
+    ahora renderiza `<a>` cuando recibe `href`, `x-ui.badge` añade el tono `teal` y `partials/pagination`
+    acepta un `label` (por defecto "pedidos").
+- [x] **U5 · SuperAdmin.** Commit `bd9e7da` (1 archivo).
+  - `livewire/superadmin/dashboard.blade.php`: aviso de éxito con `x-ui.alert`, cabecera con
+    "Portal SuperAdmin · Multi-Tenant" y botón "Nuevo Negocio", 4 KPIs (`x-ui.kpi`: negocios
+    activos, suspendidos, pedidos hoy, ventana de gracia), chips de filtro (Todos / Activos /
+    Suspendidos con contadores), búsqueda en vivo y tabla (`# Negocio` con avatar de iniciales,
+    dueño, teléfono mono, badge Activo/Suspendido, pedidos en gracia con badge ámbar + hora
+    restante y botón "Cerrar gracia", acciones Reactivar / Suspender). Modal "Crear Nuevo
+    Negocio" (7 campos, contraseña con mostrar/ocultar) y modal "Confirmar Suspensión" (lista de
+    implicaciones + checkbox obligatorio `suspendConfirmed`).
+  - Nota: `x-ui.modal` exige el prop `property` (bool público de Livewire, cierra con
+    `$wire.set`) en lugar de `wire:close` — ambos modales lo usan.
+- [ ] **U6 · Repartidor.** Rutas de hoy y detalle de entrega.
+- [ ] **U7 · QA visual.** Barridos de patrones prohibidos (`text-[9|10|11]px`, `cdn.tailwindcss`,
+  `googleusercontent`, `brightness-0`, `min-w-[1440`, textos SOS/Rastrear/ETA/comprobante/Datáfono/
+  Reordenar/Lorem), hex a mano = 0 y revisión de textos por pantalla.
+
+### 8.2 Convenciones de trabajo del rediseño
+
+- Un commit por fase: `style(ui): U<n> <descripción>`. **Nunca** `git add -A`: hay trabajo del usuario
+  sin commitear, así que se preparan rutas explícitas.
+- Al cerrar cada fase: `npm run build` y `php artisan test` en verde, `php artisan view:clear` (y
+  `icons:clear`) cuando se toquen vistas o tokens, y un resumen con las URLs a revisar. Se espera el
+  "continúa" del usuario antes de la siguiente fase.
+- Los mapas de clases (`status-badge`, `availability-badge`, `NotificationPresenter`) son siempre
+  literales completos, nunca concatenados (`'bg-'.$color`).
+
+### 8.3 Hallazgos corregidos durante el rediseño
+
+| # | Fecha | Hallazgo | Causa | Resolución |
+| :-- | :--- | :--- | :--- | :--- |
+| 1 | 2026-10-17 | `x-ui.alert` rompía el render con un error de sintaxis PHP | Un `[` sin cerrar en el `merge([...])` de la vista del componente (roto desde U1 y nunca renderizado) | Se cerró el arreglo; se añadió un render de humo de los 24 componentes |
+| 2 | 2026-10-17 | `status-badge` / `availability-badge` fallaban con los modelos reales | Usaban el enum como índice de arreglo (`$map[$enum]`) | Se normaliza a `->value` cuando llega un `BackedEnum` |
+| 3 | 2026-10-17 | Campos con `<p>` de error vacío y `aria-describedby` fantasma | `MessageBag::first()` devuelve `''` (no `null`) cuando no hay error | `x-ui.input` usa `$errors->has()` antes de `first()` |
+| 4 | 2026-10-17 | "Recordar sesión" impedía iniciar sesión | Un checkbox sin `value` envía `on`, que la regla `boolean` del controlador rechaza | Solo marcado: `x-ui.checkbox` envía `value="1"` (el controlador no se tocó) |
+| 5 | 2026-10-17 | Duda resuelta: `::type` en componentes | Blade convierte `::attr` en `:attr` para Alpine | Verificado que Alpine mapea `:` → `x-bind:` (`mapAttributes(startingWith(":", into(prefix("bind:"))))`), así que funciona |
+| 6 | 2026-10-17 | `x-ui.modal` tiraba `Undefined variable $property` al renderizar | Los modales de U5 usaban `wire:close` en vez del prop `property` (el componente cierra con `$wire.set('{{ $property }}', false)`) | Ambos modales pasan `property="showCreateModal"` / `property="showSuspendModal"`, igual que los modales de U3/U4 |
+
+### 8.4 Desviaciones conscientes de la guía
+
+| # | Fase | La guía dice | Se mantiene | Motivo |
+| :-- | :--- | :--- | :--- | :--- |
+| 1 | U4 | Tarjeta "Pedidos activos" | "Pedidos en curso" | `OwnerDashboardTest` fija el texto; son equivalentes |
+| 2 | U4 | Columna "Repartidores" | "Flota" | `OwnerDashboardTest` fija el texto; son equivalentes |
+| 3 | U4 | El dashboard no lista "Actividad reciente" | Se conserva el timeline | Sección funcional existente verificada por test; regla "no borrar secciones" |
+| 4 | U4 | No lista las pantallas "Reportes" ni "Notificaciones" | Se conservan y se reestilizan | Ya existen, están enrutadas y con tests; el rediseño no elimina funcionalidad |
+| 5 | U4 | KPI "Tiempo promedio de entrega" | Se calcula de solo lectura (`updated_at - created_at` de los entregados) porque no hay columna `delivered_at` | No se tocaron modelos ni migraciones; si no se quiere, se revierte a "—" |
+
