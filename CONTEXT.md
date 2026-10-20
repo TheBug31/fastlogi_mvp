@@ -142,8 +142,7 @@ FastLogi es una plataforma SaaS multi-tenant diseñada para pequeños y medianos
 
 > **Nota (2026-10-19):** esta sección documenta el cierre del MVP funcional. El estado vigente tras el
 > Post-MVP (§7) y el rediseño visual en curso (§8) es **182 tests / 568 aserciones en verde**; el
-> último commit verificado del rediseño es `bd9e7da` (UI U5), con U6 (Repartidor) ya aplicado en el
-> árbol de trabajo pero **sin commitear** (el repo también tiene el trabajo del usuario de slugs).
+> último commit verificado del rediseño es `a6dac14` (UI U6).
 
 ### 6.1 Suite automatizada
 
@@ -296,7 +295,7 @@ validación y todo lo que asertan los tests.
     implicaciones + checkbox obligatorio `suspendConfirmed`).
   - Nota: `x-ui.modal` exige el prop `property` (bool público de Livewire, cierra con
     `$wire.set`) en lugar de `wire:close` — ambos modales lo usan.
-- [x] **U6 · Repartidor.** Vistas `livewire/driver/routes.blade.php` y `livewire/driver/order-detail.blade.php` reconstruidas (pendiente de commit; el árbol tiene trabajo del usuario sin commitear).
+- [x] **U6 · Repartidor.** Commit `a6dac14` (3 archivos).
   - `routes.blade.php`: `<x-ui.toast />` para el flash de éxito y `x-ui.alert` para el error `offer`;
     `x-ui.page-header` "Rutas de hoy"; aviso ámbar de la guía ("No estamos recibiendo tu ubicación…")
     solo cuando hay un pedido `in_transit` y `last_seen_at` supera los 3 min; tarjeta destacada de oferta
