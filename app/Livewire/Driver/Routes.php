@@ -72,6 +72,7 @@ class Routes extends Component
         $offers = collect();
         $active = collect();
         $hasInTransit = false;
+        $deliveredToday = 0;
 
         if ($driver) {
             $offers = Order::query()
@@ -89,6 +90,12 @@ class Routes extends Component
                 ->get();
 
             $hasInTransit = $active->contains(fn (Order $order) => $order->status === OrderStatus::InTransit);
+
+            $deliveredToday = Order::query()
+                ->where('delivery_driver_id', $driver->id)
+                ->where('status', OrderStatus::Delivered->value)
+                ->whereDate('updated_at', today())
+                ->count();
         }
 
         return view('livewire.driver.routes', [
@@ -96,6 +103,7 @@ class Routes extends Component
             'offers' => $offers,
             'active' => $active,
             'hasInTransit' => $hasInTransit,
+            'deliveredToday' => $deliveredToday,
         ]);
     }
 
