@@ -140,9 +140,10 @@ FastLogi es una plataforma SaaS multi-tenant diseñada para pequeños y medianos
 
 **Fecha:** 2026-10-15 · **Último commit verificado:** `feaf194`
 
-> **Nota (2026-10-17):** esta sección documenta el cierre del MVP funcional. El estado vigente tras el
+> **Nota (2026-10-19):** esta sección documenta el cierre del MVP funcional. El estado vigente tras el
 > Post-MVP (§7) y el rediseño visual en curso (§8) es **182 tests / 568 aserciones en verde**; el
-> último commit verificado es `bd9e7da` (UI U5).
+> último commit verificado del rediseño es `bd9e7da` (UI U5), con U6 (Repartidor) ya aplicado en el
+> árbol de trabajo pero **sin commitear** (el repo también tiene el trabajo del usuario de slugs).
 
 ### 6.1 Suite automatizada
 
@@ -295,7 +296,25 @@ validación y todo lo que asertan los tests.
     implicaciones + checkbox obligatorio `suspendConfirmed`).
   - Nota: `x-ui.modal` exige el prop `property` (bool público de Livewire, cierra con
     `$wire.set`) en lugar de `wire:close` — ambos modales lo usan.
-- [ ] **U6 · Repartidor.** Rutas de hoy y detalle de entrega.
+- [x] **U6 · Repartidor.** Vistas `livewire/driver/routes.blade.php` y `livewire/driver/order-detail.blade.php` reconstruidas (pendiente de commit; el árbol tiene trabajo del usuario sin commitear).
+  - `routes.blade.php`: `<x-ui.toast />` para el flash de éxito y `x-ui.alert` para el error `offer`;
+    `x-ui.page-header` "Rutas de hoy"; aviso ámbar de la guía ("No estamos recibiendo tu ubicación…")
+    solo cuando hay un pedido `in_transit` y `last_seen_at` supera los 3 min; tarjeta destacada de oferta
+    con `border-2 border-teal-600`, anillo SVG de 64 px de cuenta regresiva real (teal > 30 s, ámbar ≤ 30 s,
+    rojo ≤ 10 s, `offer_expires_at` de servidor + Alpine), productos, total, método de pago y botones
+    Rechazar / Aceptar; lista "Mis pedidos" (tarjetas con `status-badge` que enlazan al detalle) y tarjeta
+    sticky "Tu día" (entregadas hoy, en curso, ofertas y `x-ui.capacity-bar`). Se retiran el banner
+    "Estado de flota" (duplicaba el badge del navbar) y el aviso de telemetría permanente.
+  - `order-detail.blade.php`: migas "Rutas de hoy / guía", encabezado con guía de rastreo, total y método
+    de pago, dos columnas (cliente + teléfono, manifiesto con checklist, trazabilidad como línea de tiempo
+    con `border-l`; derecha sticky con pasos Asignado → En camino → Entregado, acción principal
+    "Registrar recogida" / "Marcar como entregado" y "Reportar incidencia") y modal de incidencia con
+    `x-ui.select` / `x-ui.textarea`. Variante cancelada: banner rojo "Este pedido fue cancelado por el
+    negocio" y acciones deshabilitadas.
+  - `Driver\Routes::render()` solo suma un dato de lectura (`deliveredToday`, entregados con
+    `updated_at` de hoy); métodos, props y `wire:*` intactos.
+  - Verificación: `npm run build`, `php artisan test` (182 tests / 568 aserciones) y `pint` en verde;
+    clases nuevas (`stroke-*`, `pl-7`, `-rotate-90`) confirmadas en el CSS compilado.
 - [ ] **U7 · QA visual.** Barridos de patrones prohibidos (`text-[9|10|11]px`, `cdn.tailwindcss`,
   `googleusercontent`, `brightness-0`, `min-w-[1440`, textos SOS/Rastrear/ETA/comprobante/Datáfono/
   Reordenar/Lorem), hex a mano = 0 y revisión de textos por pantalla.
@@ -330,4 +349,10 @@ validación y todo lo que asertan los tests.
 | 3 | U4 | El dashboard no lista "Actividad reciente" | Se conserva el timeline | Sección funcional existente verificada por test; regla "no borrar secciones" |
 | 4 | U4 | No lista las pantallas "Reportes" ni "Notificaciones" | Se conservan y se reestilizan | Ya existen, están enrutadas y con tests; el rediseño no elimina funcionalidad |
 | 5 | U4 | KPI "Tiempo promedio de entrega" | Se calcula de solo lectura (`updated_at - created_at` de los entregados) porque no hay columna `delivered_at` | No se tocaron modelos ni migraciones; si no se quiere, se revierte a "—" |
+| 6 | U6 | Tarjeta de oferta incluye "productos" | Se listan la cantidad y el subtotal de los ítems | `$offer->items` es de solo lectura; no hay props nuevas |
+| 7 | U6 | "Mis pedidos" con botón "Registrar recogida" / "Marcar entregado" | La tarjeta enlaza al detalle (donde viven esas acciones) | `Driver\Routes` no tiene esos métodos; no se añadió lógica al componente |
+| 8 | U6 | Cuenta regresiva con anillo SVG | Se implementa el anillo, pero la acción principal del detalle conserva el `wire:confirm` | Mejora de UX ya verificada por test |
+| 9 | U6 | Aviso ámbar de ubicación "solo cuando de verdad falte" | Se muestra solo con un pedido `in_transit` y `last_seen_at` > 3 min | Sin `in_transit` la telemetría no se envía por diseño (RF-011), así que no es una falta real |
+| 10 | U6 | Detalle: pasos "Asignado → En camino → Entregado" (3) | Se sustituye el "Paso X de 5" previo por los 3 pasos de la guía | Ningún test fijaba el texto anterior |
+| 11 | U6 | Detalle: etiquetas "Registrar recogida" / "Marcar como entregado" | Se adoptan las etiquetas de la guía (antes "Escanear recogida" / "Escanear entrega") | Ningún test fijaba el texto anterior; el flujo de escaneo no cambia |
 
