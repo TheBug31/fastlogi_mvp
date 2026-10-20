@@ -314,9 +314,17 @@ validación y todo lo que asertan los tests.
     `updated_at` de hoy); métodos, props y `wire:*` intactos.
   - Verificación: `npm run build`, `php artisan test` (182 tests / 568 aserciones) y `pint` en verde;
     clases nuevas (`stroke-*`, `pl-7`, `-rotate-90`) confirmadas en el CSS compilado.
-- [ ] **U7 · QA visual.** Barridos de patrones prohibidos (`text-[9|10|11]px`, `cdn.tailwindcss`,
-  `googleusercontent`, `brightness-0`, `min-w-[1440`, textos SOS/Rastrear/ETA/comprobante/Datáfono/
-  Reordenar/Lorem), hex a mano = 0 y revisión de textos por pantalla.
+- [x] **U7 · QA visual.** Verificación y auditoría visual completa contra `doc/UI_GUIDE.md`.
+  - Barridos de patrones prohibidos: `text-[9|10|11]px` (0), `cdn.tailwindcss` (0), `googleusercontent` (0),
+    `brightness-0` (0), `min-w-[1440` (0), palabras prohibidas (SOS, Rastrear, ETA, comprobante, Datáfono,
+    Reordenar, Lorem) (0).
+  - Hexadecimales a mano en vistas = 0 (únicas excepciones válidas: plantillas PDF dompdf en
+    `reports/orders.blade.php` y `reports/drivers.blade.php`).
+  - Botones primarios en `bg-teal-700` con texto blanco, tipografía Inter y helpers de formato
+    (`format_cop`, `format_datetime`, `format_date`, `format_time`) en uso consistente.
+  - Modales con atributos de accesibilidad (`role="dialog"`, `aria-modal="true"`, foco y Escape).
+  - Verificación: `npm run build`, `view:clear`, `icons:clear`, `vendor/bin/pint` sobre archivos tocados
+    y suite completa en verde: **182 tests, 568 aserciones**.
 
 ### 8.2 Convenciones de trabajo del rediseño
 

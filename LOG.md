@@ -7,8 +7,8 @@ commits: el de la funcionalidad (`feat(...)`) y el de la documentación que fija
 
 - **Documentación de referencia:** [`CONTEXT.md`](CONTEXT.md) · [`doc/SRS_FastLogi_v1_2.md`](doc/SRS_FastLogi_v1_2.md)
 - **Instalación y ejecución:** [`README.md`](README.md)
-- **Último commit:** `feaf194` (2026-10-15)
-- **Estado:** ✅ MVP completo — 169 tests / 548 aserciones.
+- **Último commit:** `feaf194` (2026-10-15) · **Post-MVP sin commitear:** slugs
+- **Estado:** ✅ MVP completo + slugs — 182 tests / 568 aserciones.
 
 ---
 
@@ -92,7 +92,98 @@ Commits de documentación asociados:
 - `README.md` reescrito (instalación, ejecución, credenciales, mapa RF → archivos).
 - **169 tests / 548 aserciones.**
 
+### [Post-MVP] Slugs con generación automática — sin commitear
+- Trait `HasSlug` (fuente configurable, sufijo ante colisión, unicidad global o por tenant,
+  `getRouteKeyName() === 'slug'`, normalización de enums).
+- Migraciones `000013` (núcleo: negocios, usuarios, repartidores, productos, pedidos, paquetes) y
+  `000014` (bitácora: order_items, inventory_movements, package_scans, order_status_logs).
+- Rutas por slug en pedidos con `Order::whereKeyOrSlug()` (slugs + retrocompatibilidad con el id);
+  `Owner\Dashboard`, `Driver\Routes` y `NotificationPresenter` enlazan por modelo (slug).
+- Comando `php artisan slugs:backfill` (no destructivo, idempotente) + backfill aplicado en dev.
+- `tests/Feature/HasSlugTest.php` (13 pruebas).
+- **182 tests / 568 aserciones.**
+
+### [UI] Rediseño visual: base y login (U0–U2) — `ca309f9`, `171f0f0`
+- Fuente de verdad `doc/UI_GUIDE.md`; se descarta `doc/fastlogi-views/` (Stitch). Solo capa visual:
+  rutas, Livewire, `wire:*`, campos y mensajes de validación intactos.
+- **U1 `ca309f9`** (50 archivos): tokens en `tailwind.config.js` (`canvas`, `sidebar`, `sidebar-active`,
+  Inter), `app.css`, `partials/head.blade.php`, helpers `format_cop`/`format_datetime`/`format_date`/
+  `format_time` (`autoload.files`), 24 componentes `<x-ui.*>` + `<x-icon>`, 5 layouts, marca en
+  `public/images/brand/`, `NotificationPresenter` adaptado, `welcome.blade.php` eliminado,
+  `blade-ui-kit/blade-heroicons` con registro de `blade-icons` desactivado.
+- **U2 `171f0f0`** (9 archivos): `auth/login.blade.php` sobre el layout `guest` (panel de marca +
+  formulario con mostrar/ocultar contraseña, "Recordar sesión" y alertas roja/ámbar de la guía); fuera
+  el modo demo, el logo remoto, la telemetría inventada y los enlaces muertos.
+- Arreglos de componentes: `x-ui.alert` con un arreglo PHP sin cerrar; `status-badge`/
+  `availability-badge` aceptan el enum del modelo; `x-ui.input` aplica `type`, soporta slot `suffix` e
+  `invalid`/`show-error` y usa `$errors->has()` (`MessageBag::first()` devuelve `''`); nuevo
+  `x-ui.checkbox` que envía `value="1"` (el checkbox roto impedía iniciar sesión con "Recordar
+  sesión"); `x-icon` propaga atributos extra.
+- Verificación: render de humo de los 24 componentes + `npm run build` + `php artisan test`.
+- **182 tests / 568 aserciones.** Ninguna aserción existente tuvo que cambiarse.
+
 ---
+
+### [UI] Rediseño visual: pedidos del dueño (U3) — `7a46ac4`
+- **U3 `7a46ac4`** (3 archivos): `livewire/owner/orders.blade.php` reconstruido con el sistema de diseño
+  (cabecera + "Nuevo pedido", aviso ámbar de stock bajo con enlace "Ver inventario", tarjeta con pestañas
+  y contadores, barra de filtros, tabla de 7 columnas y paginación con vista propia
+  `partials/pagination.blade.php`). Se retiran los 4 KPIs (viven en el dashboard) y las acciones de la
+  tabla siguen la guía (Ofrecer / "Responde en 0:54" + Retirar / Ver detalle / motivo del cancelado /
+  Confirmar devolución); Cancelar, Reasignar y Registrar incidencia pasan al drawer de detalle.
+- `Owner\Orders::render()` solo suma dos datos de lectura (`statusCounts`, `actionOrder`); props públicas,
+  métodos y validaciones intactos. Sin cambios en rutas, modelos, servicios ni tests.
+- Verificación: `npm run build` + `php artisan test` (**182 passed / 568 assertions**) y volcado del HTML
+  real de la tabla, el drawer y los cuatro modales.
+
+### [UI] Rediseño visual: resto del panel del dueño (U4) — `1294d16`
+- **U4 `1294d16`** (9 archivos): dashboard, inventario, repartidores, reportes y centro de notificaciones
+  reconstruidos con `<x-ui.*>`. Dashboard con los KPIs de la guía, tabla "Pedidos en curso", columnas
+  "Flota" y "Alertas de inventario" y timeline "Actividad reciente". Inventario con aviso "Atención de
+  inventario", filtros, tabla de 7 columnas y modal de producto. Repartidores con alerta roja "Sin
+  conexión con pedidos asignados", tabla (capacidad, última conexión en ámbar tras el umbral) y modales de
+  alta/edición con slider 1–8 y contraseña con mostrar/ocultar. Reportes reestilizado (filtros, KPIs,
+  vista previa) y centro de notificaciones con pestañas con contadores y acciones por fila.
+- Cambios de apoyo (todos de solo lectura o de componente): `Owner\Dashboard::render()` suma
+  `promedioEntrega` y `lowStockProducts`; `x-ui.button` soporta `href` (renderiza `<a>`); `x-ui.badge`
+  suma el color `teal`; `partials/pagination.blade.php` acepta un `label` (por defecto "pedidos").
+- Se conservan textos fijados por tests ("Panel de Operaciones", "Pedidos en curso", "Flota",
+  "Actividad reciente", "Atención de inventario", "Reportes", "Descargar pedidos (PDF)") y se
+  reestilizan las pantallas que la guía no lista (Reportes, Notificaciones). Desviaciones documentadas
+  en `CONTEXT.md` §8.4.
+- Verificación: `npm run build` + `php artisan test` (**182 passed / 568 assertions**); barrido de
+  patrones prohibidos y de tokens antiguos en las 5 vistas = 0; iconos verificados contra el set outline.
+
+### [UI] Rediseño visual: SuperAdmin (U5) — `bd9e7da` · docs `5f66b23`
+- **U5 `bd9e7da`** (1 archivo): `livewire/superadmin/dashboard.blade.php` reconstruido con el sistema de
+  diseño: 4 KPIs (`x-ui.kpi`), chips de filtro (Todos / Activos / Suspendidos con contadores), búsqueda
+  en vivo, tabla con avatar de iniciales y pedidos en gracia con badge ámbar + tiempo restante y botón
+  "Cerrar gracia". Modales "Crear Nuevo Negocio" y "Confirmar Suspensión" con checkbox obligatorio.
+- Modales usan el prop `property` para enlazar con Alpine/Livewire.
+- Verificación: `npm run build` + `php artisan test` (**182 passed / 568 assertions**).
+
+### [UI] Rediseño visual: repartidor (U6) — `a6dac14` · docs `52794c7`
+- **U6 `a6dac14`** (3 archivos): `routes.blade.php` y `order-detail.blade.php` reconstruidos con `<x-ui.*>`.
+  - Rutas: aviso ámbar de ubicación solo con `in_transit` y `last_seen_at > 3m`, tarjeta de oferta destacada
+    con borde `border-2 border-teal-600` y anillo SVG de 64 px con cuenta regresiva en vivo sincronizada con
+    servidor + Alpine, lista de "Mis pedidos" y tarjeta sticky "Tu día" con barra de capacidad.
+  - Detalle: migas, cabecera de rastreo, 2 columnas (cliente con botón de llamada, manifiesto de paquetes
+    con checklist, trazabilidad vertical con línea `border-l`; derecha sticky con pasos Asignado → En camino →
+    Entregado, botón Registrar recogida / Marcar como entregado y Reportar incidencia con modal).
+- `Driver\Routes::render()` suma solo el dato de lectura `deliveredToday`.
+- Verificación: `npm run build` + `php artisan test` (**182 passed / 568 assertions**).
+
+### [UI] Rediseño visual: QA visual y auditoría (U7)
+- Barridos de patrones prohibidos:
+  - `text-[9|10|11]px` = 0 coincidencias.
+  - `cdn.tailwindcss` = 0 coincidencias.
+  - `googleusercontent` = 0 coincidencias.
+  - `brightness-0` = 0 coincidencias.
+  - `min-w-[1440` = 0 coincidencias.
+  - Palabras prohibidas (`SOS`, `Rastrear`, `ETA`, `comprobante`, `Datáfono`/`Datafono`, `Reordenar`, `Lorem`) = 0 coincidencias.
+  - Hexadecimales en vistas = 0 (salvo dompdf en `reports/orders.blade.php` y `reports/drivers.blade.php`).
+- Consistencia de botones (`bg-teal-700` con texto blanco), tipografía Inter y helpers `format_cop()` / `format_datetime()`.
+- Verificación: `npm run build`, `view:clear`, `icons:clear`, `vendor/bin/pint` y suite completa: **182 tests, 568 aserciones en verde**.
 
 ## Verificación final (2026-10-15)
 
