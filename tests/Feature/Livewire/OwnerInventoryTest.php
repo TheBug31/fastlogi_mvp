@@ -75,6 +75,7 @@ test('editing the stock down across the minimum fires the alert', function () {
     Livewire::actingAs($this->owner)
         ->test(Inventory::class)
         ->call('openEditModal', $product->id)
+        ->assertSee('Editar producto')
         ->assertSet('name', $product->name)
         ->set('stock', '2')
         ->call('save')
@@ -84,6 +85,37 @@ test('editing the stock down across the minimum fires the alert', function () {
         ->and($product->fresh()->low_stock_alerted)->toBeTrue();
 
     Notification::assertSentTo($this->owner, LowStockAlert::class);
+});
+
+test('the normal stock filter never includes exhausted products', function () {
+    Product::factory()->create([
+        'business_id' => $this->business->id,
+        'name' => 'Producto agotado sin mínimo',
+        'stock' => 0,
+        'min_stock' => 0,
+    ]);
+    Product::factory()->create([
+        'business_id' => $this->business->id,
+        'name' => 'Producto normal',
+        'stock' => 4,
+        'min_stock' => 0,
+    ]);
+
+    Livewire::actingAs($this->owner)
+        ->test(Inventory::class)
+        ->set('statusFilter', 'normal')
+        ->assertSee('Producto normal')
+        ->assertDontSee('Producto agotado sin mínimo');
+});
+
+test('clearing inventory filters resets both search and status', function () {
+    Livewire::actingAs($this->owner)
+        ->test(Inventory::class)
+        ->set('search', 'sin coincidencias')
+        ->set('statusFilter', 'agotado')
+        ->call('clearFilters')
+        ->assertSet('search', '')
+        ->assertSet('statusFilter', 'todos');
 });
 
 test('an owner can delete an unused product', function () {

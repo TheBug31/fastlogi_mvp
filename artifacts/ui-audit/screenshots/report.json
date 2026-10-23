@@ -1,0 +1,587 @@
+{
+  "pages": [
+    {
+      "role": "guest",
+      "path": "/login",
+      "mode": "desktop",
+      "file": "login-desktop.png",
+      "state": {
+        "path": "/login",
+        "title": "Iniciar sesión · FastLogi",
+        "heading": "Tu operación de domicilios, bajo control",
+        "body": "Tu operación de domicilios, bajo control\nPedidos y repartidores en una sola pantalla\nTrazabilidad de cada entrega\nReportes de tu operación\nColombia\nIniciar sesión\nCorreo o teléfono\nContraseña\nRecordar"
+      }
+    },
+    {
+      "role": "guest",
+      "path": "/login",
+      "mode": "mobile",
+      "file": "login-mobile.png",
+      "state": {
+        "path": "/login",
+        "title": "Iniciar sesión · FastLogi",
+        "heading": "Tu operación de domicilios, bajo control",
+        "body": "Tu operación de domicilios, bajo control\nPedidos y repartidores en una sola pantalla\nTrazabilidad de cada entrega\nReportes de tu operación\nColombia\nIniciar sesión\nCorreo o teléfono\nContraseña\nRecordar"
+      }
+    },
+    {
+      "role": "owner",
+      "path": "/negocio",
+      "mode": "desktop",
+      "file": "owner-dashboard-desktop.png",
+      "state": {
+        "path": "/negocio",
+        "title": "Dashboard · FastLogi",
+        "heading": "Panel de Operaciones",
+        "body": "Inicio\nPedidos\nNuevo pedido\nInventario\nRepartidores\nReportes\nConfiguración\nServicio en línea\nR\nRestaurante El Leñador\n3\nDon Antonio Leñador\nDueño de Negocio\nDA\nPanel de Operaciones\n\nResumen de Restaurante El Leñador · 23 de octubre de 2026\n",
+        "dialogs": 1,
+        "components": [
+          "owner.notification-bell",
+          "owner.dashboard"
+        ]
+      }
+    },
+    {
+      "role": "owner",
+      "path": "/negocio",
+      "mode": "mobile",
+      "file": "owner-dashboard-mobile.png",
+      "state": {
+        "path": "/negocio",
+        "title": "Dashboard · FastLogi",
+        "heading": "Panel de Operaciones",
+        "body": "R\nRestaurante El Leñador\n3\nDA\nPanel de Operaciones\n\nResumen de Restaurante El Leñador · 23 de octubre de 2026\n\nVer pedidos\nNuevo pedido\n\nVentas de hoy\n\n$ 32.000\n\nPedidos entregados\n\n1\n\nTiempo promedio de entrega\n\n0 min\n\nPedidos activos\n\n4\n\n",
+        "dialogs": 1,
+        "components": [
+          "owner.notification-bell",
+          "owner.dashboard"
+        ]
+      }
+    },
+    {
+      "role": "owner",
+      "path": "/negocio/configuracion",
+      "mode": "desktop",
+      "file": "owner-settings-desktop.png",
+      "state": {
+        "path": "/negocio/configuracion",
+        "title": "Configuración · FastLogi",
+        "heading": "Configuración",
+        "body": "Inicio\nPedidos\nNuevo pedido\nInventario\nRepartidores\nReportes\nConfiguración\nServicio en línea\nR\nRestaurante El Leñador\n3\nDon Antonio Leñador\nDueño de Negocio\nDA\nConfiguración\n\nDatos de tu negocio y de tu cuenta de acceso.\n\nRepartidores\n\n3\n\nP",
+        "dialogs": 1,
+        "components": [
+          "owner.notification-bell",
+          "owner.settings"
+        ]
+      }
+    },
+    {
+      "role": "owner",
+      "path": "/negocio/configuracion",
+      "mode": "mobile",
+      "file": "owner-settings-mobile.png",
+      "state": {
+        "path": "/negocio/configuracion",
+        "title": "Configuración · FastLogi",
+        "heading": "Configuración",
+        "body": "R\nRestaurante El Leñador\n3\nDA\nConfiguración\n\nDatos de tu negocio y de tu cuenta de acceso.\n\nRepartidores\n\n3\n\nProductos\n\n8\n\nPedidos\n\n7\n\nDatos del negocio\n\nAparecen en la cabecera del panel y en los reportes.\n\nNombre del negocio\nDirección\nTel",
+        "dialogs": 1,
+        "components": [
+          "owner.notification-bell",
+          "owner.settings"
+        ]
+      }
+    },
+    {
+      "role": "owner",
+      "path": "/negocio/inventario",
+      "mode": "desktop",
+      "file": "owner-inventory-desktop.png",
+      "state": {
+        "path": "/negocio/inventario",
+        "title": "Inventario · FastLogi",
+        "heading": "Inventario",
+        "body": "Inicio\nPedidos\nNuevo pedido\nInventario\nRepartidores\nReportes\nConfiguración\nServicio en línea\nR\nRestaurante El Leñador\n3\nDon Antonio Leñador\nDueño de Negocio\nDA\nInventario\n\nControl de existencias, precios, stock mínimo y alertas de reabastec",
+        "dialogs": 1,
+        "components": [
+          "owner.notification-bell",
+          "owner.inventory"
+        ]
+      }
+    },
+    {
+      "role": "owner",
+      "path": "/negocio/inventario",
+      "mode": "mobile",
+      "file": "owner-inventory-mobile.png",
+      "state": {
+        "path": "/negocio/inventario",
+        "title": "Inventario · FastLogi",
+        "heading": "Inventario",
+        "body": "R\nRestaurante El Leñador\n3\nDA\nInventario\n\nControl de existencias, precios, stock mínimo y alertas de reabastecimiento.\n\nNuevo producto\n\nTotal Productos\n\n8\n\nRegistrados en tu inventario\n\nStock Bajo\n\n2\n\nPor debajo del mínimo\n\nAgotados\n\n1\n\nSin",
+        "dialogs": 1,
+        "components": [
+          "owner.notification-bell",
+          "owner.inventory"
+        ]
+      }
+    },
+    {
+      "role": "owner",
+      "path": "/negocio/notificaciones",
+      "mode": "desktop",
+      "file": "owner-notifications-desktop.png",
+      "state": {
+        "path": "/negocio/notificaciones",
+        "title": "Notificaciones · FastLogi",
+        "heading": "Centro de Notificaciones",
+        "body": "Inicio\nPedidos\nNuevo pedido\nInventario\nRepartidores\nReportes\nConfiguración\nServicio en línea\nR\nRestaurante El Leñador\n3\nDon Antonio Leñador\nDueño de Negocio\nDA\nCentro de Notificaciones\n\n3 en total · 3 sin leer\n\nMarcar todas como leídas\nToda",
+        "dialogs": 1,
+        "components": [
+          "owner.notification-bell",
+          "owner.notifications"
+        ]
+      }
+    },
+    {
+      "role": "owner",
+      "path": "/negocio/notificaciones",
+      "mode": "mobile",
+      "file": "owner-notifications-mobile.png",
+      "state": {
+        "path": "/negocio/notificaciones",
+        "title": "Notificaciones · FastLogi",
+        "heading": "Centro de Notificaciones",
+        "body": "R\nRestaurante El Leñador\n3\nDA\nCentro de Notificaciones\n\n3 en total · 3 sin leer\n\nMarcar todas como leídas\nTodas\n3\nNo leídas\n3\nLeídas\n0\n\nEl producto «Costillas BBQ Ahumadas» bajó del stock mínimo (3 de 5).\n\n23 de octubre de 2026, 3:59 a. m.\n",
+        "dialogs": 1,
+        "components": [
+          "owner.notification-bell",
+          "owner.notifications"
+        ]
+      }
+    },
+    {
+      "role": "owner",
+      "path": "/negocio/pedidos",
+      "mode": "desktop",
+      "file": "owner-orders-desktop.png",
+      "state": {
+        "path": "/negocio/pedidos",
+        "title": "Pedidos · FastLogi",
+        "heading": "Gestión de Pedidos",
+        "body": "Inicio\nPedidos\nNuevo pedido\nInventario\nRepartidores\nReportes\nConfiguración\nServicio en línea\nR\nRestaurante El Leñador\n3\nDon Antonio Leñador\nDueño de Negocio\nDA\nGestión de Pedidos\n\nMonitoreo en tiempo real y asignación de repartidores.\n\nNuev",
+        "dialogs": 1,
+        "components": [
+          "owner.notification-bell",
+          "owner.orders"
+        ]
+      }
+    },
+    {
+      "role": "owner",
+      "path": "/negocio/pedidos",
+      "mode": "mobile",
+      "file": "owner-orders-mobile.png",
+      "state": {
+        "path": "/negocio/pedidos",
+        "title": "Pedidos · FastLogi",
+        "heading": "Gestión de Pedidos",
+        "body": "R\nRestaurante El Leñador\n3\nDA\nGestión de Pedidos\n\nMonitoreo en tiempo real y asignación de repartidores.\n\nNuevo pedido\n\nTienes 3 producto(s) por debajo del stock mínimo. Reabastece para no perder ventas.\n\nVer inventario\nTodos\n7\nPendientes\n1",
+        "dialogs": 1,
+        "components": [
+          "owner.notification-bell",
+          "owner.orders"
+        ]
+      }
+    },
+    {
+      "role": "owner",
+      "path": "/negocio/pedidos/maria-camila-rodriguez",
+      "mode": "desktop",
+      "file": "owner-owner-order-detail-desktop.png",
+      "state": {
+        "path": "/negocio/pedidos/maria-camila-rodriguez",
+        "title": "Detalle del Pedido · FastLogi",
+        "heading": "Gestión de Pedidos",
+        "body": "Inicio\nPedidos\nNuevo pedido\nInventario\nRepartidores\nReportes\nConfiguración\nServicio en línea\nR\nRestaurante El Leñador\n3\nDon Antonio Leñador\nDueño de Negocio\nDA\nGestión de Pedidos\n\nMonitoreo en tiempo real y asignación de repartidores.\n\nNuev",
+        "dialogs": 2,
+        "components": [
+          "owner.notification-bell",
+          "owner.orders"
+        ]
+      }
+    },
+    {
+      "role": "owner",
+      "path": "/negocio/pedidos/maria-camila-rodriguez",
+      "mode": "mobile",
+      "file": "owner-owner-order-detail-mobile.png",
+      "state": {
+        "path": "/negocio/pedidos/maria-camila-rodriguez",
+        "title": "Detalle del Pedido · FastLogi",
+        "heading": "Gestión de Pedidos",
+        "body": "R\nRestaurante El Leñador\n3\nDA\nGestión de Pedidos\n\nMonitoreo en tiempo real y asignación de repartidores.\n\nNuevo pedido\n\nTienes 3 producto(s) por debajo del stock mínimo. Reabastece para no perder ventas.\n\nVer inventario\nTodos\n7\nPendientes\n1",
+        "dialogs": 2,
+        "components": [
+          "owner.notification-bell",
+          "owner.orders"
+        ]
+      }
+    },
+    {
+      "role": "owner",
+      "path": "/negocio/pedidos/nuevo",
+      "mode": "desktop",
+      "file": "owner-new-order-desktop.png",
+      "state": {
+        "path": "/negocio/pedidos/nuevo",
+        "title": "Nuevo Pedido · FastLogi",
+        "heading": "Gestión de Pedidos",
+        "body": "Inicio\nPedidos\nNuevo pedido\nInventario\nRepartidores\nReportes\nConfiguración\nServicio en línea\nR\nRestaurante El Leñador\n3\nDon Antonio Leñador\nDueño de Negocio\nDA\nGestión de Pedidos\n\nMonitoreo en tiempo real y asignación de repartidores.\n\nNuev",
+        "dialogs": 2,
+        "components": [
+          "owner.notification-bell",
+          "owner.orders"
+        ]
+      }
+    },
+    {
+      "role": "owner",
+      "path": "/negocio/pedidos/nuevo",
+      "mode": "mobile",
+      "file": "owner-new-order-mobile.png",
+      "state": {
+        "path": "/negocio/pedidos/nuevo",
+        "title": "Nuevo Pedido · FastLogi",
+        "heading": "Gestión de Pedidos",
+        "body": "R\nRestaurante El Leñador\n3\nDA\nGestión de Pedidos\n\nMonitoreo en tiempo real y asignación de repartidores.\n\nNuevo pedido\n\nTienes 3 producto(s) por debajo del stock mínimo. Reabastece para no perder ventas.\n\nVer inventario\nTodos\n7\nPendientes\n1",
+        "dialogs": 2,
+        "components": [
+          "owner.notification-bell",
+          "owner.orders"
+        ]
+      }
+    },
+    {
+      "role": "owner",
+      "path": "/negocio/repartidores",
+      "mode": "desktop",
+      "file": "owner-drivers-desktop.png",
+      "state": {
+        "path": "/negocio/repartidores",
+        "title": "Repartidores · FastLogi",
+        "heading": "Repartidores",
+        "body": "Inicio\nPedidos\nNuevo pedido\nInventario\nRepartidores\nReportes\nConfiguración\nServicio en línea\nR\nRestaurante El Leñador\n3\nDon Antonio Leñador\nDueño de Negocio\nDA\nRepartidores\n\nSupervisión de la flota, disponibilidad y límites de carga.\n\nNuevo",
+        "dialogs": 1,
+        "components": [
+          "owner.notification-bell",
+          "owner.drivers"
+        ]
+      }
+    },
+    {
+      "role": "owner",
+      "path": "/negocio/repartidores",
+      "mode": "mobile",
+      "file": "owner-drivers-mobile.png",
+      "state": {
+        "path": "/negocio/repartidores",
+        "title": "Repartidores · FastLogi",
+        "heading": "Repartidores",
+        "body": "R\nRestaurante El Leñador\n3\nDA\nRepartidores\n\nSupervisión de la flota, disponibilidad y límites de carga.\n\nNuevo repartidor\n\nTotal repartidores\n\n3\n\nEn tu flota\n\nDisponibles\n\n1\n\nListos para recibir pedidos\n\nOcupados\n\n1\n\nCon carga activa\n\nDesco",
+        "dialogs": 1,
+        "components": [
+          "owner.notification-bell",
+          "owner.drivers"
+        ]
+      }
+    },
+    {
+      "role": "owner",
+      "path": "/negocio/reportes",
+      "mode": "desktop",
+      "file": "owner-reports-desktop.png",
+      "state": {
+        "path": "/negocio/reportes",
+        "title": "Reportes · FastLogi",
+        "heading": "Reportes",
+        "body": "Inicio\nPedidos\nNuevo pedido\nInventario\nRepartidores\nReportes\nConfiguración\nServicio en línea\nR\nRestaurante El Leñador\n3\nDon Antonio Leñador\nDueño de Negocio\nDA\nReportes\n\nGenera reportes de pedidos y repartidores en PDF con filtros.\n\nFiltros",
+        "dialogs": 1,
+        "components": [
+          "owner.notification-bell",
+          "owner.reports"
+        ]
+      }
+    },
+    {
+      "role": "owner",
+      "path": "/negocio/reportes",
+      "mode": "mobile",
+      "file": "owner-reports-mobile.png",
+      "state": {
+        "path": "/negocio/reportes",
+        "title": "Reportes · FastLogi",
+        "heading": "Reportes",
+        "body": "R\nRestaurante El Leñador\n3\nDA\nReportes\n\nGenera reportes de pedidos y repartidores en PDF con filtros.\n\nFiltros\nDesde\nHasta\nEstado\nTodos\nPendiente\nOfrecido\nAsignado\nEn Tránsito\nEntregado\nCancelado\nIncidencia\nRepartidor\nTodos\nCarlos Gómez\nAnd",
+        "dialogs": 1,
+        "components": [
+          "owner.notification-bell",
+          "owner.reports"
+        ]
+      }
+    },
+    {
+      "role": "driver",
+      "path": "/repartidor/historial",
+      "mode": "desktop",
+      "file": "driver-history-desktop.png",
+      "state": {
+        "path": "/repartidor/historial",
+        "title": "Historial · FastLogi",
+        "heading": "Historial de entregas",
+        "body": "Rutas de hoy\nHistorial\nUbicación activa\nDisponible\nCarlos Gómez\nRepartidor\nCG\nHistorial de entregas\n\nTus pedidos finalizados: entregas, cancelaciones e incidencias.\n\nEntregadas\n\n0\n\nEntregadas hoy\n\n0\n\nIncidencias\n\n1\n\nCanceladas\n\n0\n\nDesde\nHas",
+        "dialogs": 0,
+        "components": [
+          "driver.availability-toggle",
+          "driver.history"
+        ]
+      }
+    },
+    {
+      "role": "driver",
+      "path": "/repartidor/historial",
+      "mode": "mobile",
+      "file": "driver-history-mobile.png",
+      "state": {
+        "path": "/repartidor/historial",
+        "title": "Historial · FastLogi",
+        "heading": "Historial de entregas",
+        "body": "Rutas de hoy\nHistorial\nDisponible\nCG\nHistorial de entregas\n\nTus pedidos finalizados: entregas, cancelaciones e incidencias.\n\nEntregadas\n\n0\n\nEntregadas hoy\n\n0\n\nIncidencias\n\n1\n\nCanceladas\n\n0\n\nDesde\nHasta\nEstado\nTodos\nEntregado\nCancelado\nIncid",
+        "dialogs": 0,
+        "components": [
+          "driver.availability-toggle",
+          "driver.history"
+        ]
+      }
+    },
+    {
+      "role": "driver",
+      "path": "/repartidor/pedidos/julian-david-morales",
+      "mode": "desktop",
+      "file": "driver-orders-desktop.png",
+      "state": {
+        "path": "/repartidor/pedidos/julian-david-morales",
+        "title": "Detalle de entrega · FastLogi",
+        "heading": "PKG-1042-BOG",
+        "body": "Rutas de hoy\nHistorial\nUbicación activa\nDisponible\nCarlos Gómez\nRepartidor\nCG\nRutas de hoy\n/\nPKG-1042-BOG\n\nGUÍA DE RASTREO\n\nPKG-1042-BOG\nOfrecido\nTOTAL A COBRAR\n$ 45.000\nMÉTODO DE PAGO\nNequi / Daviplata\n\nCLIENTE\n\nJulián David Morales\n\nCalle",
+        "dialogs": 0,
+        "components": [
+          "driver.availability-toggle",
+          "driver.order-detail"
+        ]
+      }
+    },
+    {
+      "role": "driver",
+      "path": "/repartidor/pedidos/julian-david-morales",
+      "mode": "mobile",
+      "file": "driver-orders-mobile.png",
+      "state": {
+        "path": "/repartidor/pedidos/julian-david-morales",
+        "title": "Detalle de entrega · FastLogi",
+        "heading": "PKG-1042-BOG",
+        "body": "Rutas de hoy\nHistorial\nDisponible\nCG\nRutas de hoy\n/\nPKG-1042-BOG\n\nGUÍA DE RASTREO\n\nPKG-1042-BOG\nOfrecido\nTOTAL A COBRAR\n$ 45.000\nMÉTODO DE PAGO\nNequi / Daviplata\n\nCLIENTE\n\nJulián David Morales\n\nCalle 94 # 11-30, Chicó Norte\n\n3185556677\n\nMan",
+        "dialogs": 0,
+        "components": [
+          "driver.availability-toggle",
+          "driver.order-detail"
+        ]
+      }
+    },
+    {
+      "role": "driver",
+      "path": "/repartidor/rutas",
+      "mode": "desktop",
+      "file": "driver-routes-desktop.png",
+      "state": {
+        "path": "/repartidor/rutas",
+        "title": "Rutas de hoy · FastLogi",
+        "heading": "Rutas de hoy",
+        "body": "Rutas de hoy\nHistorial\nUbicación activa\nDisponible\nCarlos Gómez\nRepartidor\nCG\nRutas de hoy\n\nTus ofertas y entregas en curso.\n\nNuevas ofertas\n\nPedido #0002\n\nJulián David Morales\n\n13s\nCalle 94 # 11-30, Chicó Norte\n1 × Lomo al Trapo (500g)\n$ 4",
+        "dialogs": 0,
+        "components": [
+          "driver.availability-toggle",
+          "driver.routes"
+        ]
+      }
+    },
+    {
+      "role": "driver",
+      "path": "/repartidor/rutas",
+      "mode": "mobile",
+      "file": "driver-routes-mobile.png",
+      "state": {
+        "path": "/repartidor/rutas",
+        "title": "Rutas de hoy · FastLogi",
+        "heading": "Rutas de hoy",
+        "body": "Rutas de hoy\nHistorial\nDisponible\nCG\nRutas de hoy\n\nTus ofertas y entregas en curso.\n\nNuevas ofertas\n\nPedido #0002\n\nJulián David Morales\n\n11s\nCalle 94 # 11-30, Chicó Norte\n1 × Lomo al Trapo (500g)\n$ 45.000\n$ 45.000\nNequi / Daviplata\nRechazar",
+        "dialogs": 0,
+        "components": [
+          "driver.availability-toggle",
+          "driver.routes"
+        ]
+      }
+    },
+    {
+      "role": "superadmin",
+      "path": "/superadmin",
+      "mode": "desktop",
+      "file": "superadmin-dashboard-desktop.png",
+      "state": {
+        "path": "/superadmin",
+        "title": "SuperAdmin · FastLogi",
+        "heading": "Negocios",
+        "body": "SuperAdmin\nDashboard\nNegocios\nMétricas\nServicio en línea\nS\nPlataforma\nSuper Administrador FastLogi\nSuper Administrador\nSA\nNegocios\n\nSupervisión de comercios afiliados, control de estados y ventana de gracia de 24 horas.\n\nNuevo negocio\n\nNego",
+        "dialogs": 1,
+        "components": [
+          "superadmin.dashboard"
+        ]
+      }
+    },
+    {
+      "role": "superadmin",
+      "path": "/superadmin",
+      "mode": "mobile",
+      "file": "superadmin-dashboard-mobile.png",
+      "state": {
+        "path": "/superadmin",
+        "title": "SuperAdmin · FastLogi",
+        "heading": "Negocios",
+        "body": "S\nPlataforma\nSA\nNegocios\n\nSupervisión de comercios afiliados, control de estados y ventana de gracia de 24 horas.\n\nNuevo negocio\n\nNegocios activos\n\n2\n\nde 2 registrados\n\nNegocios suspendidos\n\n0\n\nAcceso del dueño bloqueado\n\nPedidos hoy\n\n8\n\nTo",
+        "dialogs": 1,
+        "components": [
+          "superadmin.dashboard"
+        ]
+      }
+    },
+    {
+      "role": "superadmin",
+      "path": "/superadmin/negocios",
+      "mode": "desktop",
+      "file": "superadmin-businesses-desktop.png",
+      "state": {
+        "path": "/superadmin/negocios",
+        "title": "SuperAdmin · FastLogi",
+        "heading": "Negocios",
+        "body": "SuperAdmin\nDashboard\nNegocios\nMétricas\nServicio en línea\nS\nPlataforma\nSuper Administrador FastLogi\nSuper Administrador\nSA\nNegocios\n\nSupervisión de comercios afiliados, control de estados y ventana de gracia de 24 horas.\n\nNuevo negocio\n\nNego",
+        "dialogs": 1,
+        "components": [
+          "superadmin.dashboard"
+        ]
+      }
+    },
+    {
+      "role": "superadmin",
+      "path": "/superadmin/negocios",
+      "mode": "mobile",
+      "file": "superadmin-businesses-mobile.png",
+      "state": {
+        "path": "/superadmin/negocios",
+        "title": "SuperAdmin · FastLogi",
+        "heading": "Negocios",
+        "body": "S\nPlataforma\nSA\nNegocios\n\nSupervisión de comercios afiliados, control de estados y ventana de gracia de 24 horas.\n\nNuevo negocio\n\nNegocios activos\n\n2\n\nde 2 registrados\n\nNegocios suspendidos\n\n0\n\nAcceso del dueño bloqueado\n\nPedidos hoy\n\n8\n\nTo",
+        "dialogs": 1,
+        "components": [
+          "superadmin.dashboard"
+        ]
+      }
+    }
+  ],
+  "failures": [],
+  "javascriptErrors": [],
+  "interactions": [
+    {
+      "role": "owner",
+      "path": "/negocio/inventario",
+      "action": "click Nuevo producto",
+      "result": {
+        "found": true,
+        "modalAfterClick": true
+      }
+    },
+    {
+      "role": "owner",
+      "path": "/negocio/repartidores",
+      "action": "click Nuevo repartidor",
+      "result": {
+        "found": true,
+        "modalAfterClick": true
+      }
+    }
+  ],
+  "interactionAudit": [
+    {
+      "path": "/negocio/inventario",
+      "mode": "desktop",
+      "action": "Editar producto 2",
+      "clicked": true,
+      "opened": true
+    },
+    {
+      "path": "/negocio/inventario",
+      "mode": "mobile",
+      "action": "Editar producto 2",
+      "clicked": true,
+      "opened": true
+    },
+    {
+      "path": "/negocio/inventario",
+      "mode": "desktop",
+      "action": "Eliminar producto 7 sin pedidos asociados",
+      "clicked": true,
+      "rowExistedBefore": true,
+      "rowExistsAfter": false,
+      "deleted": true
+    },
+    {
+      "path": "/negocio/repartidores",
+      "mode": "desktop",
+      "action": "Editar openEditModal(1)",
+      "clicked": true,
+      "opened": true
+    },
+    {
+      "path": "/negocio/repartidores",
+      "mode": "mobile",
+      "action": "Editar openEditModal(1)",
+      "clicked": true,
+      "opened": true
+    },
+    {
+      "path": "/negocio/repartidores",
+      "mode": "desktop",
+      "action": "Cambiar disponibilidad toggleAvailability(1) y volver en línea",
+      "clicked": true,
+      "statusBefore": "CG\n\nCarlos Gómez\n\ndriver1@fastlogi.test\n\n3101112233\n\n\t\nDisponible\t\n1/3 pedidos\n\thace 5 minutos\t3 pedidos\t",
+      "statusChanged": "CG\n\nCarlos Gómez\n\ndriver1@fastlogi.test\n\n3101112233\n\n\t\nDesconectado\t\n1/3 pedidos\n\thace 5 minutos\t3 pedidos\t",
+      "toggled": true,
+      "restored": true,
+      "statusAfterRestore": "Disponible"
+    }
+  ],
+  "actionJavascriptErrors": [],
+  "editSaveAudit": [
+    {
+      "path": "/negocio/inventario",
+      "action": "Guardar edición de precio y restaurar valor inicial",
+      "saveSucceeded": false,
+      "restored": true
+    },
+    {
+      "path": "/negocio/repartidores",
+      "action": "Guardar edición de teléfono y restaurar valor inicial",
+      "saveSucceeded": true,
+      "restored": true
+    }
+  ]
+}

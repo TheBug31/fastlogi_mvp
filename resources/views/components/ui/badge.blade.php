@@ -12,6 +12,7 @@
         'teal' => 'bg-teal-100 text-teal-800',
         'amber' => 'bg-amber-100 text-amber-800',
         'green' => 'bg-green-100 text-green-800',
+        'emerald' => 'bg-green-100 text-green-800',
         'red' => 'bg-red-100 text-red-700',
     ];
 
@@ -23,6 +24,7 @@
         'teal' => 'bg-teal-500',
         'amber' => 'bg-amber-500',
         'green' => 'bg-green-500',
+        'emerald' => 'bg-green-500',
         'red' => 'bg-red-600',
     ];
 

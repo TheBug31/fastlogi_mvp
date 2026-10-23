@@ -60,6 +60,13 @@ class Inventory extends Component
         $this->resetPage();
     }
 
+    public function clearFilters(): void
+    {
+        $this->search = '';
+        $this->statusFilter = 'todos';
+        $this->resetPage();
+    }
+
     public function openCreateModal(): void
     {
         $this->resetValidation();
@@ -112,16 +119,17 @@ class Inventory extends Component
 
         $this->showModal = false;
         $this->reset(['name', 'barcode', 'price', 'stock', 'min_stock', 'unit', 'editingId']);
-        session()->flash('success', $message);
+        $this->dispatch('toast', message: $message);
     }
 
     public function delete(int $productId, InventoryService $inventory): void
     {
+        $this->resetValidation('delete');
         $product = Product::findOrFail($productId);
 
         try {
             $inventory->deleteProduct($product);
-            session()->flash('success', 'Producto eliminado correctamente.');
+            $this->dispatch('toast', message: 'Producto eliminado correctamente.');
         } catch (ProductInUseException $e) {
             $this->addError('delete', $e->getMessage());
         }
@@ -144,6 +152,7 @@ class Inventory extends Component
             ->when($this->statusFilter === 'agotado', fn ($query) => $query
                 ->where('stock', '<=', 0))
             ->when($this->statusFilter === 'normal', fn ($query) => $query
+                ->where('stock', '>', 0)
                 ->where(fn ($sub) => $sub->where('min_stock', '<=', 0)
                     ->orWhereColumn('stock', '>=', 'min_stock')))
             ->orderBy('name')
@@ -152,11 +161,17 @@ class Inventory extends Component
         $lowStockCount = Product::query()
             ->where('min_stock', '>', 0)
             ->whereColumn('stock', '<', 'min_stock')
+            ->where('stock', '>', 0)
             ->count();
+
+        $outOfStockCount = Product::query()->where('stock', '<=', 0)->count();
+        $totalProductCount = Product::query()->count();
 
         return view('livewire.owner.inventory', [
             'products' => $products,
             'lowStockCount' => $lowStockCount,
+            'outOfStockCount' => $outOfStockCount,
+            'totalProductCount' => $totalProductCount,
             'units' => self::UNITS,
         ]);
     }

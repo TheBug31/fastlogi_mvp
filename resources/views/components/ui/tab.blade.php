@@ -16,13 +16,12 @@
 
 <button
     type="button"
-    role="tab"
     @if ($xActive !== null)
         x-bind:class="{{ $xActive }} ? '{{ $activeClasses }}' : '{{ $inactiveClasses }}'"
-        x-bind:aria-selected="{{ $xActive }} ? 'true' : 'false'"
+        x-bind:aria-pressed="{{ $xActive }} ? 'true' : 'false'"
     @else
         class="{{ $active ? $activeClasses : $inactiveClasses }}"
-        @if ($active) aria-selected="true" @endif
+        aria-pressed="{{ $active ? 'true' : 'false' }}"
     @endif
     {{ $attributes->except('class') }}
 >

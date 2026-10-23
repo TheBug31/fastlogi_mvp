@@ -11,7 +11,7 @@ use Livewire\Component;
 
 class OrderDetail extends Component
 {
-    public int $orderId;
+    public string $orderId = '';
 
     public string $incidentReason = 'Cliente ausente / No contesta';
 
@@ -19,7 +19,7 @@ class OrderDetail extends Component
 
     public bool $showIncidentSheet = false;
 
-    public function mount(int $orderId, DriverTelemetryService $telemetry): void
+    public function mount(string $orderId, DriverTelemetryService $telemetry): void
     {
         $this->orderId = $orderId;
 
@@ -117,6 +117,7 @@ class OrderDetail extends Component
     {
         return Order::where('delivery_driver_id', auth()->user()->deliveryDriver?->id)
             ->with(['items.product', 'package.scans', 'business'])
-            ->findOrFail($this->orderId);
+            ->whereKeyOrSlug($this->orderId)
+            ->firstOrFail();
     }
 }

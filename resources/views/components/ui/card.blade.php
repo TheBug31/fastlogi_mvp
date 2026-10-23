@@ -5,8 +5,8 @@
 @php
     $classes = match ($padding) {
         'none' => 'rounded-xl border border-slate-200 bg-white shadow-sm overflow-hidden',
-        'dense' => 'rounded-xl border border-slate-200 bg-white shadow-sm p-5',
-        default => 'rounded-xl border border-slate-200 bg-white shadow-sm p-6',
+        'dense' => 'rounded-xl border border-slate-200 bg-white shadow-sm p-4 sm:p-5',
+        default => 'rounded-xl border border-slate-200 bg-white shadow-sm p-4 sm:p-6',
     };
 @endphp
 

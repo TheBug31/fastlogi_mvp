@@ -98,7 +98,7 @@ test('opening an order notification redirects to the order detail and marks it r
     Livewire::actingAs($this->owner)
         ->test(NotificationCenter::class)
         ->call('openNotification', $notification->id)
-        ->assertRedirect(route('owner.orders.show', $order->id));
+        ->assertRedirect(route('owner.orders.show', $order));
 
     expect($notification->fresh()->read_at)->not->toBeNull();
 });

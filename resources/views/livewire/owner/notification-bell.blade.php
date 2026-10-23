@@ -5,7 +5,7 @@
         aria-label="Notificaciones"
         class="relative flex h-9 w-9 items-center justify-center rounded-lg text-slate-500 transition-colors hover:bg-slate-100 hover:text-slate-900 focus:outline-none focus-visible:ring-2 focus-visible:ring-teal-600 focus-visible:ring-offset-2"
     >
-        <x-icon name="bell" />
+        <x-icon name="bell" class="h-5 w-5" />
 
         @if ($unreadCount > 0)
             <span class="absolute -right-0.5 -top-0.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-red-600 px-1 text-xs font-semibold leading-none text-white">
@@ -17,7 +17,7 @@
     @if ($open)
         <x-ui.drawer title="Notificaciones" property="open" size="sm">
             <div x-data="{ tab: 'todas' }" class="space-y-3">
-                <x-ui.tabs>
+                <x-ui.tabs aria-label="Filtrar notificaciones">
                     <x-ui.tab x-active="tab === 'todas'" :count="$notifications->count()" @click="tab = 'todas'">Todas</x-ui.tab>
                     <x-ui.tab x-active="tab === 'no_leidas'" :count="$unreadCount" @click="tab = 'no_leidas'">No leídas</x-ui.tab>
                 </x-ui.tabs>
@@ -34,7 +34,9 @@
                         x-show="{{ $show }}"
                         class="flex items-start gap-3 rounded-xl border border-slate-200 bg-white p-4"
                     >
-                        <x-icon :name="\App\Support\NotificationPresenter::icon($data)" class="mt-0.5 shrink-0 {{ \App\Support\NotificationPresenter::tone($data) }}" />
+                        <span class="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-slate-50 ring-1 ring-slate-200" aria-hidden="true">
+                            <x-icon :name="\App\Support\NotificationPresenter::icon($data)" class="h-4 w-4 {{ \App\Support\NotificationPresenter::tone($data) }}" />
+                        </span>
 
                         <div class="min-w-0 flex-1">
                             <p class="text-sm {{ $unread ? 'font-medium text-slate-900' : 'text-slate-600' }}">

@@ -71,8 +71,6 @@ class Drivers extends Component
 
     public function createDriver(DriverManagementService $drivers): void
     {
-        $businessId = auth()->user()->business_id;
-
         $validated = $this->validate([
             'name' => ['required', 'string', 'max:255'],
             'email' => ['required', 'email', 'max:255', Rule::unique('users', 'email')],
@@ -86,7 +84,7 @@ class Drivers extends Component
         $this->showCreateModal = false;
         $this->reset(['name', 'email', 'phone', 'password']);
 
-        session()->flash('success', 'Repartidor vinculado correctamente. Ya puede iniciar sesión con sus credenciales.');
+        $this->dispatch('toast', message: 'Repartidor vinculado correctamente. Ya puede iniciar sesión con sus credenciales.');
     }
 
     // ── Edit ────────────────────────────────────────────────────────
@@ -124,7 +122,7 @@ class Drivers extends Component
         ]);
 
         $this->showEditModal = false;
-        session()->flash('success', 'Datos del repartidor actualizados.');
+        $this->dispatch('toast', message: 'Datos del repartidor actualizados.');
     }
 
     // ── Availability ────────────────────────────────────────────────
@@ -139,7 +137,7 @@ class Drivers extends Component
 
         $drivers->setAvailability($driver, $target);
 
-        session()->flash('success', $target === DriverAvailability::Offline
+        $this->dispatch('toast', message: $target === DriverAvailability::Offline
             ? 'El repartidor quedó marcado como desconectado.'
             : 'El repartidor quedó disponible para recibir ofertas.');
     }
@@ -167,8 +165,14 @@ class Drivers extends Component
             ->orderBy('id')
             ->paginate(10);
 
+        $disconnectedWithOrdersCount = DeliveryDriver::query()
+            ->where('availability', DriverAvailability::Offline->value)
+            ->whereHas('activeOrders')
+            ->count();
+
         return view('livewire.owner.drivers', [
             'drivers' => $drivers,
+            'disconnectedWithOrdersCount' => $disconnectedWithOrdersCount,
             'kpis' => [
                 'total' => DeliveryDriver::count(),
                 'disponibles' => DeliveryDriver::where('availability', DriverAvailability::Available->value)->count(),

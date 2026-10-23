@@ -4,6 +4,8 @@ namespace App\Models;
 
 use App\Enums\OrderStatus;
 use App\Models\Traits\BelongsToBusiness;
+use App\Models\Traits\HasSlug;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -12,10 +14,11 @@ use Illuminate\Database\Eloquent\Relations\HasOne;
 
 class Order extends Model
 {
-    use BelongsToBusiness, HasFactory;
+    use BelongsToBusiness, HasFactory, HasSlug;
 
     protected $fillable = [
         'business_id',
+        'slug',
         'customer_name',
         'customer_phone',
         'delivery_address',
@@ -40,6 +43,31 @@ class Order extends Model
     public function deliveryDriver(): BelongsTo
     {
         return $this->belongsTo(DeliveryDriver::class);
+    }
+
+    /**
+     * Orders have no `name`: the slug is derived from the customer name.
+     */
+    protected function slugSource(): ?string
+    {
+        return 'customer_name';
+    }
+
+    /**
+     * Resolve an order by numeric id or by slug, so the public URLs can be
+     * human-readable while legacy id-based links keep working.
+     */
+    public function scopeWhereKeyOrSlug(Builder $query, string|int|null $key): Builder
+    {
+        $key = (string) $key;
+
+        if ($key === '') {
+            return $query->whereRaw('1 = 0');
+        }
+
+        return ctype_digit($key)
+            ? $query->whereKey($key)
+            : $query->where('slug', $key);
     }
 
     public function items(): HasMany

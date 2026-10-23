@@ -1,9 +1,12 @@
 @props([
-    'type' => 'info',
+    'type' => null,
+    'variant' => null,
     'title' => null,
 ])
 
 @php
+    $type = $type ?? $variant ?? 'info';
+
     $map = [
         'warning' => ['classes' => 'border-amber-200 bg-amber-50 text-amber-900', 'icon' => 'exclamation-triangle', 'iconClass' => 'text-amber-500'],
         'error' => ['classes' => 'border-red-200 bg-red-50 text-red-800', 'icon' => 'exclamation-circle', 'iconClass' => 'text-red-500'],
@@ -15,7 +18,7 @@
 @endphp
 
 <div {{ $attributes->merge(['class' => 'flex items-start gap-3 rounded-xl border p-4 text-sm '.$entry['classes']]) }} role="{{ $type === 'error' ? 'alert' : 'status' }}">
-    <x-icon :name="$entry['icon']" class="mt-0.5 shrink-0 {{ $entry['iconClass'] }}" />
+    <x-icon :name="$entry['icon']" class="mt-0.5 h-5 w-5 shrink-0 {{ $entry['iconClass'] }}" />
 
     <div class="min-w-0 flex-1">
         @if ($title)

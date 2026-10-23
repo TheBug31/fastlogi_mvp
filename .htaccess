@@ -1,0 +1,7 @@
+RewriteEngine On
+
+# Exponer archivos de storage/app/public sin symlink
+RewriteRule ^storage/(.*)$ /storage/app/public/$1 [END]
+
+# Redirigir todo al front controller de Laravel
+RewriteRule (.*) /public/$1 [L]

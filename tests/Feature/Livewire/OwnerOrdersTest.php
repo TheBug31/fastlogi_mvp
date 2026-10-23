@@ -39,6 +39,25 @@ test('the order list only shows orders of the authenticated business', function 
         ->assertDontSee('Cliente Ajeno');
 });
 
+test('the order search filters by customer name and phone', function () {
+    Order::factory()->create([
+        'business_id' => $this->business->id,
+        'customer_name' => 'Camila Torres',
+        'customer_phone' => '3001112233',
+    ]);
+    Order::factory()->create([
+        'business_id' => $this->business->id,
+        'customer_name' => 'Andrés Ruiz',
+        'customer_phone' => '3004445566',
+    ]);
+
+    Livewire::actingAs($this->owner)
+        ->test(Orders::class)
+        ->set('search', 'Camila')
+        ->assertSee('Camila Torres')
+        ->assertDontSee('Andrés Ruiz');
+});
+
 test('an owner can create an order from the panel and stock is reserved', function () {
     $product = Product::factory()->create([
         'business_id' => $this->business->id,
@@ -200,6 +219,11 @@ test('the order pages render for the authenticated owner', function () {
         ->get(route('owner.orders.create'))
         ->assertOk();
 
+    $this->actingAs($this->owner)
+        ->get(route('owner.orders.show', $order))
+        ->assertOk();
+
+    // Legacy id-based URLs keep working thanks to the slug/id resolver.
     $this->actingAs($this->owner)
         ->get(route('owner.orders.show', $order->id))
         ->assertOk();

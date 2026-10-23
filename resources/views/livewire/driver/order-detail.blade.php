@@ -1,6 +1,4 @@
 <div class="space-y-6">
-    <x-ui.toast />
-
     @error('scan')
         <x-ui.alert type="error">{{ $message }}</x-ui.alert>
     @enderror
@@ -44,7 +42,7 @@
             <x-ui.status-badge :status="$order->status" />
         </div>
 
-        <dl class="mt-5 grid grid-cols-2 gap-4 border-t border-slate-200 pt-5">
+        <dl class="mt-5 grid grid-cols-1 gap-4 border-t border-slate-200 pt-5 sm:grid-cols-2">
             <div>
                 <dt class="text-xs font-medium uppercase tracking-wider text-slate-500">Total a cobrar</dt>
                 <dd class="mt-1 text-base font-semibold tabular-nums text-slate-900">{{ format_cop($order->total) }}</dd>
@@ -64,7 +62,7 @@
                 <div class="flex items-center justify-between gap-4 border-b border-slate-200 pb-4">
                     <div class="min-w-0">
                         <p class="text-xs font-medium uppercase tracking-wider text-slate-500">Cliente</p>
-                        <p class="mt-1 truncate text-lg font-semibold text-slate-900">{{ $order->customer_name }}</p>
+                        <p class="mt-1 whitespace-normal break-words text-lg font-semibold text-slate-900">{{ $order->customer_name }}</p>
                     </div>
                     <a href="tel:{{ $order->customer_phone }}"
                        class="flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-teal-200 bg-teal-50 text-teal-700"
@@ -74,7 +72,7 @@
                 </div>
                 <div class="mt-4 flex items-start gap-2.5">
                     <x-icon name="map-pin" class="mt-0.5 h-5 w-5 shrink-0 text-teal-600" />
-                    <span class="font-medium text-slate-700">{{ $order->delivery_address }}</span>
+                            <span class="whitespace-normal break-words font-medium text-slate-700">{{ $order->delivery_address }}</span>
                 </div>
                 @if ($order->customer_phone)
                     <p class="mt-1 pl-7 text-sm text-slate-500">{{ $order->customer_phone }}</p>
@@ -90,7 +88,7 @@
                 <ul class="mt-4 divide-y divide-slate-100">
                     @foreach ($order->items as $item)
                         <li class="flex items-center justify-between gap-3 py-2.5">
-                            <span class="flex items-center gap-2.5 text-sm text-slate-700">
+                            <span class="flex min-w-0 items-center gap-2.5 text-sm text-slate-700">
                                 <x-icon name="check-circle" class="h-5 w-5 shrink-0 text-teal-600" />
                                 {{ $item->quantity }} × {{ $item->product?->name }}
                             </span>

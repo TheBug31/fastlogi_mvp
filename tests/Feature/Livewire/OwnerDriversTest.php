@@ -1,10 +1,12 @@
 <?php
 
 use App\Enums\DriverAvailability;
+use App\Enums\OrderStatus;
 use App\Enums\UserRole;
 use App\Livewire\Owner\Drivers;
 use App\Models\Business;
 use App\Models\DeliveryDriver;
+use App\Models\Order;
 use App\Models\User;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -36,6 +38,19 @@ test('the fleet list only shows drivers of the authenticated business', function
     Livewire::actingAs($this->owner)
         ->test(Drivers::class)
         ->assertViewHas('drivers', fn ($drivers) => $drivers->count() === 1);
+});
+
+test('the fleet search filters by driver name and email', function () {
+    $matching = fleetDriver($this->business);
+    $matching->user->update(['name' => 'Camila Torres', 'email' => 'camila@fastlogi.test']);
+    $other = fleetDriver($this->business);
+    $other->user->update(['name' => 'Andrés Ruiz', 'email' => 'andres@fastlogi.test']);
+
+    Livewire::actingAs($this->owner)
+        ->test(Drivers::class)
+        ->set('search', 'Camila')
+        ->assertSee('Camila Torres')
+        ->assertDontSee('Andrés Ruiz');
 });
 
 test('the fleet KPI cards count each availability state', function () {
@@ -123,6 +138,7 @@ test('the owner can edit the profile and the capacity limit of a driver', functi
     Livewire::actingAs($this->owner)
         ->test(Drivers::class)
         ->call('openEditModal', $driver->id)
+        ->assertSee('Editar repartidor')
         ->assertSet('showEditModal', true)
         ->set('edit_name', 'Nombre Editado')
         ->set('edit_email', 'editado@fastlogi.test')
@@ -137,6 +153,21 @@ test('the owner can edit the profile and the capacity limit of a driver', functi
     expect($driver->max_active_orders)->toBe(7)
         ->and($driver->user->name)->toBe('Nombre Editado')
         ->and($driver->user->email)->toBe('editado@fastlogi.test');
+});
+
+test('offline drivers with active orders remain alerted when availability is filtered', function () {
+    $offline = fleetDriver($this->business, ['availability' => DriverAvailability::Offline]);
+    Order::factory()->create([
+        'business_id' => $this->business->id,
+        'delivery_driver_id' => $offline->id,
+        'status' => OrderStatus::Assigned,
+    ]);
+
+    Livewire::actingAs($this->owner)
+        ->test(Drivers::class)
+        ->set('availabilityFilter', DriverAvailability::Available->value)
+        ->assertViewHas('disconnectedWithOrdersCount', 1)
+        ->assertSee('1 repartidor(es) desconectado(s) con pedidos activos');
 });
 
 test('the owner cannot open the profile of a driver from another business', function () {

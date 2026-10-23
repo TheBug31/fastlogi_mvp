@@ -8,6 +8,7 @@ use App\Models\DeliveryDriver;
 use App\Models\Order;
 use App\Models\OrderStatusLog;
 use App\Models\Product;
+use Illuminate\Support\Facades\DB;
 use Livewire\Component;
 
 /**
@@ -43,8 +44,14 @@ class Dashboard extends Component
 
         // Tiempo promedio de entrega (guía §6): minutos entre la creación y la
         // última actualización de los pedidos entregados. Solo lectura.
+        $durationInSeconds = match (DB::connection()->getDriverName()) {
+            'sqlite' => '(julianday(updated_at) - julianday(created_at)) * 86400',
+            'pgsql' => 'EXTRACT(EPOCH FROM (updated_at - created_at))',
+            default => 'TIMESTAMPDIFF(SECOND, created_at, updated_at)',
+        };
+
         $promedioEntrega = Order::where('status', OrderStatus::Delivered->value)
-            ->selectRaw('AVG(TIMESTAMPDIFF(SECOND, created_at, updated_at)) as promedio')
+            ->selectRaw("AVG({$durationInSeconds}) as promedio")
             ->value('promedio');
 
         $kpis = [

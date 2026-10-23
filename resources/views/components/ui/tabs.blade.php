@@ -1,3 +1,3 @@
-<div {{ $attributes->merge(['class' => 'flex gap-6 border-b border-slate-200']) }} role="tablist">
+<div {{ $attributes->merge(['class' => 'flex max-w-full gap-4 overflow-x-auto border-b border-slate-200 sm:gap-6']) }} role="group">
     {{ $slot }}
 </div>

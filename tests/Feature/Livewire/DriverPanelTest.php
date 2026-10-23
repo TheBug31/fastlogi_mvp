@@ -174,11 +174,11 @@ test('the driver pages render and isolate orders by driver', function () {
     attachPackage($order);
 
     $this->actingAs($this->driverUser)->get(route('driver.routes'))->assertOk();
-    $this->actingAs($this->driverUser)->get(route('driver.orders.show', $order->id))->assertOk();
+    $this->actingAs($this->driverUser)->get(route('driver.orders.show', $order))->assertOk();
 
     $otherDriver = panelDriver($this->business);
 
     $this->actingAs($otherDriver->user)
-        ->get(route('driver.orders.show', $order->id))
+        ->get(route('driver.orders.show', $order))
         ->assertNotFound();
 });

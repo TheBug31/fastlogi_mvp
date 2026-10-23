@@ -39,6 +39,7 @@ Route::prefix('negocio')
         Route::view('/inventario', 'owner.inventory')->name('inventory.index');
         Route::view('/repartidores', 'owner.drivers')->name('drivers.index');
         Route::view('/reportes', 'owner.reports')->name('reports.index');
+        Route::view('/configuracion', 'owner.settings')->name('settings.index');
         Route::get('/reportes/pedidos/pdf', [ReportController::class, 'orders'])->name('reports.orders');
         Route::get('/reportes/repartidores/pdf', [ReportController::class, 'drivers'])->name('reports.drivers');
     });
@@ -49,6 +50,7 @@ Route::prefix('repartidor')
     ->middleware(['auth', 'role:driver'])
     ->group(function () {
         Route::view('/rutas', 'driver.routes')->name('routes');
+        Route::view('/historial', 'driver.history')->name('history');
         Route::view('/pedidos/{order?}', 'driver.order-detail')->name('orders.show');
         Route::post('/telemetria', DriverTelemetryController::class)->name('telemetry');
     });

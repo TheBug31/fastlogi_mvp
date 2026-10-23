@@ -152,15 +152,15 @@ class Dashboard extends Component
             ->when($term !== '', function ($query) use ($term) {
                 $like = '%'.$term.'%';
                 $query->where(function ($sub) use ($like) {
-                    $sub->where('name', 'like', $like)
-                        ->orWhere('phone', 'like', $like)
+                    $sub->where('businesses.name', 'like', $like)
+                        ->orWhere('businesses.phone', 'like', $like)
                         ->orWhereHas('users', function ($users) use ($like) {
                             $users->where('role', UserRole::Owner->value)
-                                ->where(fn ($inner) => $inner->where('name', 'like', $like)->orWhere('email', 'like', $like));
+                                ->where(fn ($inner) => $inner->where('users.name', 'like', $like)->orWhere('users.email', 'like', $like));
                         });
                 });
             })
-            ->orderBy('name')
+            ->orderBy('businesses.name')
             ->paginate(10);
 
         return view('livewire.superadmin.dashboard', [

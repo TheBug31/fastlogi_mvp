@@ -1,6 +1,4 @@
-﻿<div class="space-y-6">
-    <x-ui.toast />
-
+<div class="space-y-6">
     <x-ui.page-header title="Centro de Notificaciones"
                       :description="$totalCount . ' en total · ' . $unreadCount . ' sin leer'">
         <x-slot:actions>
@@ -18,7 +16,7 @@
         </x-slot:actions>
     </x-ui.page-header>
 
-    <x-ui.tabs>
+    <x-ui.tabs aria-label="Filtrar notificaciones">
         <x-ui.tab :active="$filter === 'todas'" :count="$totalCount"
                   wire:click="$set('filter', 'todas')">Todas</x-ui.tab>
         <x-ui.tab :active="$filter === 'no_leidas'" :count="$unreadCount"
@@ -39,10 +37,10 @@
                         $unread = ! $notification->read_at;
                     @endphp
                     <div wire:key="notif-{{ $notification->id }}"
-                         class="flex items-start gap-4 px-6 py-4 {{ $unread ? 'bg-teal-50/40' : '' }}">
+                         class="flex flex-wrap items-start gap-3 px-4 py-4 sm:flex-nowrap sm:gap-4 sm:px-6 {{ $unread ? 'bg-teal-50/40' : '' }}">
                         <span class="mt-0.5 flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-white ring-1 ring-slate-200" aria-hidden="true">
                             <x-icon :name="\App\Support\NotificationPresenter::icon($data)"
-                                    class="{{ \App\Support\NotificationPresenter::tone($data) }}" />
+                                    class="h-5 w-5 {{ \App\Support\NotificationPresenter::tone($data) }}" />
                         </span>
 
                         <div class="min-w-0 flex-1">
@@ -60,7 +58,7 @@
                             </div>
                         </div>
 
-                        <div class="flex shrink-0 items-center gap-1">
+                        <div class="ml-auto flex shrink-0 items-center gap-1 self-center">
                             @if (\App\Support\NotificationPresenter::url($data))
                                 <x-ui.button variant="ghost" size="sm" class="w-8 px-0 hover:no-underline"
                                              wire:click="openNotification('{{ $notification->id }}')"

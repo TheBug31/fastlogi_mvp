@@ -1,11 +1,6 @@
-﻿<div class="space-y-6">
-    <x-ui.toast />
-
+<div class="space-y-6">
     @php
         $threshold = auth()->user()?->business?->inactivity_threshold_minutes ?? 15;
-        $disconnectedWithOrders = $drivers->filter(
-            fn ($driver) => $driver->availability === \App\Enums\DriverAvailability::Offline && $driver->active_orders_count > 0,
-        );
     @endphp
 
     <x-ui.page-header title="Repartidores" description="Supervisión de la flota, disponibilidad y límites de carga.">
@@ -17,11 +12,30 @@
         </x-slot:actions>
     </x-ui.page-header>
 
-    @if ($disconnectedWithOrders->isNotEmpty())
+    <div class="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
+        <x-ui.kpi label="Total repartidores" icon="users">
+            {{ number_format($kpis['total']) }}
+            <x-slot:trend>En tu flota</x-slot:trend>
+        </x-ui.kpi>
+        <x-ui.kpi label="Disponibles" icon="check-circle">
+            {{ number_format($kpis['disponibles']) }}
+            <x-slot:trend>Listos para recibir pedidos</x-slot:trend>
+        </x-ui.kpi>
+        <x-ui.kpi label="Ocupados" icon="truck">
+            {{ number_format($kpis['ocupados']) }}
+            <x-slot:trend>Con carga activa</x-slot:trend>
+        </x-ui.kpi>
+        <x-ui.kpi label="Desconectados" icon="x-circle">
+            {{ number_format($kpis['offline']) }}
+            <x-slot:trend>Fuera de servicio</x-slot:trend>
+        </x-ui.kpi>
+    </div>
+
+    @if ($disconnectedWithOrdersCount > 0)
         <x-ui.alert type="error">
             <p>
                 <span class="font-semibold">Sin conexión con pedidos asignados:</span>
-                {{ $disconnectedWithOrders->count() }} repartidor(es) desconectado(s) con pedidos activos.
+                {{ $disconnectedWithOrdersCount }} repartidor(es) desconectado(s) con pedidos activos.
             </p>
             <x-slot:actions>
                 <a href="{{ route('owner.orders.index') }}" wire:navigate class="font-medium underline">Ver pedidos</a>
@@ -35,7 +49,7 @@
                 <span class="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3 text-slate-400" aria-hidden="true">
                     <x-icon name="magnifying-glass" />
                 </span>
-                <input type="search" wire:model.live.debounce.400ms="search"
+                <input type="search" wire:model.live.debounce.250ms="search"
                        aria-label="Buscar por nombre, correo o teléfono"
                        placeholder="Buscar por nombre, correo o teléfono…"
                        class="h-10 w-full rounded-lg border border-slate-300 bg-white pl-10 pr-3.5 text-sm text-slate-900 placeholder:text-slate-400 focus:border-teal-600 focus:outline-none focus:ring-2 focus:ring-teal-600/20"/>
@@ -51,7 +65,62 @@
             </div>
         </div>
 
-        <div class="overflow-x-auto">
+        <div class="divide-y divide-slate-200 lg:hidden">
+            @forelse ($drivers as $driver)
+                @php
+                    $offline = $driver->availability === \App\Enums\DriverAvailability::Offline;
+                    $stale = $driver->last_seen_at === null || $driver->last_seen_at->lt(now()->subMinutes($threshold));
+                @endphp
+                <article wire:key="driver-card-{{ $driver->id }}" class="space-y-4 bg-white p-4">
+                    <div class="flex items-start justify-between gap-3">
+                        <div class="flex min-w-0 items-center gap-3">
+                            <x-ui.avatar :name="$driver->user?->name ?? ''" />
+                            <div class="min-w-0">
+                                <h2 class="break-words text-sm font-semibold text-slate-900">{{ $driver->user?->name }}</h2>
+                                <p class="mt-0.5 break-all text-xs text-slate-500">{{ $driver->user?->email }}</p>
+                                <p class="mt-0.5 text-xs tabular-nums text-slate-500">{{ $driver->user?->phone ?: 'Sin teléfono' }}</p>
+                            </div>
+                        </div>
+                        <x-ui.availability-badge :availability="$driver->availability" />
+                    </div>
+
+                    <div class="rounded-lg bg-slate-50 p-3">
+                        <x-ui.capacity-bar :active="$driver->active_orders_count" :max="$driver->max_active_orders" />
+                    </div>
+
+                    <dl class="grid grid-cols-2 gap-3 text-sm">
+                        <div>
+                            <dt class="text-xs text-slate-500">Última conexión</dt>
+                            <dd class="mt-0.5 {{ $stale ? 'font-medium text-amber-600' : 'text-slate-700' }}">
+                                {{ $driver->last_seen_at ? $driver->last_seen_at->diffForHumans() : 'Sin señal' }}
+                            </dd>
+                        </div>
+                        <div>
+                            <dt class="text-xs text-slate-500">Límite</dt>
+                            <dd class="mt-0.5 tabular-nums text-slate-700">{{ $driver->max_active_orders }} pedidos</dd>
+                        </div>
+                    </dl>
+
+                    <div class="flex gap-2">
+                        <x-ui.button variant="secondary" size="sm" class="flex-1" type="button"
+                                     wire:loading.attr="disabled"
+                                     wire:click="openEditModal({{ $driver->id }})">
+                            <x-icon name="pencil-square" class="h-4 w-4" /> Editar
+                        </x-ui.button>
+                        <x-ui.button variant="secondary" size="sm" class="flex-1" type="button"
+                                     wire:loading.attr="disabled"
+                                     wire:click="toggleAvailability({{ $driver->id }})">
+                            <x-icon name="power" class="h-4 w-4" />
+                            {{ $offline ? 'Marcar disponible' : 'Desconectar' }}
+                        </x-ui.button>
+                    </div>
+                </article>
+            @empty
+                <div class="px-4 py-10 text-center text-sm text-slate-500">No hay repartidores que coincidan con el filtro.</div>
+            @endforelse
+        </div>
+
+        <div class="hidden overflow-x-auto lg:block">
             <table class="min-w-full divide-y divide-slate-200">
                 <thead class="border-b border-slate-200 bg-slate-50">
                     <tr>
@@ -75,6 +144,7 @@
                                     <x-ui.avatar :name="$driver->user?->name ?? ''" />
                                     <div class="min-w-0">
                                         <p class="font-medium text-slate-900">{{ $driver->user?->name }}</p>
+                                        <p class="mt-0.5 break-all text-xs text-slate-500">{{ $driver->user?->email }}</p>
                                         <p class="mt-0.5 text-xs tabular-nums text-slate-500">{{ $driver->user?->phone ?: 'Sin teléfono' }}</p>
                                     </div>
                                 </div>
@@ -98,18 +168,22 @@
                             </x-ui.table.td>
                             <x-ui.table.td align="right">
                                 <div class="flex items-center justify-end gap-1">
-                                    <x-ui.button variant="ghost" size="sm" class="w-8 px-0 hover:no-underline"
-                                                 wire:click="openEditModal({{ $driver->id }})"
-                                                 aria-label="Editar {{ $driver->user?->name }}">
+                                    <button type="button"
+                                            wire:loading.attr="disabled"
+                                            wire:click="openEditModal({{ $driver->id }})"
+                                            aria-label="Editar {{ $driver->user?->name }}"
+                                            title="Editar repartidor"
+                                            class="inline-flex h-8 w-8 items-center justify-center rounded-md border border-slate-200 text-slate-500 transition-colors hover:bg-teal-50 hover:text-teal-600 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-teal-600 disabled:opacity-50">
                                         <x-icon name="pencil-square" class="h-4 w-4" />
-                                    </x-ui.button>
-                                    <x-ui.button variant="ghost" size="sm"
-                                                 class="w-8 px-0 hover:no-underline {{ $offline ? 'text-teal-700' : 'text-slate-500' }}"
-                                                 wire:click="toggleAvailability({{ $driver->id }})"
-                                                 aria-label="{{ $offline ? 'Marcar disponible' : 'Marcar desconectado' }}"
-                                                 title="{{ $offline ? 'Marcar disponible' : 'Marcar desconectado' }}">
+                                    </button>
+                                    <button type="button"
+                                            class="inline-flex h-8 w-8 items-center justify-center rounded-md border border-slate-200 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-teal-600 disabled:opacity-50 {{ $offline ? 'text-teal-700 hover:bg-teal-50' : 'text-slate-500 hover:bg-slate-50 hover:text-slate-700' }}"
+                                            wire:loading.attr="disabled"
+                                            wire:click="toggleAvailability({{ $driver->id }})"
+                                            aria-label="{{ $offline ? 'Marcar disponible' : 'Marcar desconectado' }}"
+                                            title="{{ $offline ? 'Marcar disponible' : 'Marcar desconectado' }}">
                                         <x-icon name="power" class="h-4 w-4" />
-                                    </x-ui.button>
+                                    </button>
                                 </div>
                             </x-ui.table.td>
                         </tr>

@@ -35,7 +35,7 @@ class Orders extends Component
 
     public string $delivery_address = '';
 
-    public string $payment_method = 'Contra Entrega (Efectivo)';
+    public string $payment_method = 'Efectivo';
 
     public bool $requires_traceability = false;
 
@@ -70,14 +70,18 @@ class Orders extends Component
 
     public ?int $detailOrderId = null;
 
-    public function mount(bool $startCreate = false, ?int $orderId = null): void
+    public function mount(bool $startCreate = false, ?string $orderId = null): void
     {
         if ($startCreate) {
             $this->openCreateModal();
         }
 
-        if ($orderId !== null) {
-            $this->openDetailModal($orderId);
+        if ($orderId !== null && $orderId !== '') {
+            $order = Order::query()->whereKeyOrSlug($orderId)->first();
+
+            if ($order !== null) {
+                $this->openDetailModal($order->id);
+            }
         }
     }
 
@@ -98,7 +102,7 @@ class Orders extends Component
         $this->resetValidation();
         $this->reset(['customer_name', 'customer_phone', 'delivery_address', 'requires_traceability']);
         $this->lines = [['product_id' => '', 'quantity' => 1]];
-        $this->payment_method = 'Contra Entrega (Efectivo)';
+        $this->payment_method = 'Efectivo';
         $this->showCreateModal = true;
     }
 
@@ -123,7 +127,7 @@ class Orders extends Component
             'customer_name' => ['required', 'string', 'max:255'],
             'customer_phone' => ['required', 'string', 'max:30'],
             'delivery_address' => ['required', 'string', 'max:255'],
-            'payment_method' => ['required', 'string', 'max:100'],
+            'payment_method' => ['required', 'string', 'in:Efectivo,Transferencia,Tarjeta'],
             'requires_traceability' => ['boolean'],
             'lines' => ['required', 'array', 'min:1'],
             'lines.*.product_id' => ['required', 'integer'],
@@ -297,7 +301,8 @@ class Orders extends Component
                 $like = '%'.$term.'%';
                 $query->where(fn ($sub) => $sub->where('customer_name', 'like', $like)
                     ->orWhere('id', 'like', $like)
-                    ->orWhere('customer_phone', 'like', $like));
+                    ->orWhere('customer_phone', 'like', $like)
+                    ->orWhere('delivery_address', 'like', $like));
             })
             ->when($this->statusFilter !== 'todos', fn ($query) => $query
                 ->where('status', $this->statusFilter))

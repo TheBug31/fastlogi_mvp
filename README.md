@@ -10,16 +10,16 @@ Bitácora cronológica de desarrollo: [`LOG.md`](LOG.md).
 
 ## Stack
 
-| Capa | Tecnología |
-| --- | --- |
-| Lenguaje | PHP 8.4 |
-| Framework | Laravel 12 |
-| UI reactiva | Livewire v3 |
-| Estilos | Tailwind CSS 4 + Vite |
-| Base de datos | MySQL 8 (utf8mb4) |
+| Capa              | Tecnología                                      |
+| ----------------- | ----------------------------------------------- |
+| Lenguaje          | PHP 8.4                                         |
+| Framework         | Laravel 12                                      |
+| UI reactiva       | Livewire v3                                     |
+| Estilos           | Tailwind CSS 4 + Vite                           |
+| Base de datos     | MySQL 8 (utf8mb4)                               |
 | Colas / scheduler | Driver `database` (`QUEUE_CONNECTION=database`) |
-| PDF | barryvdh/laravel-dompdf |
-| Pruebas | Pest |
+| PDF               | barryvdh/laravel-dompdf                         |
+| Pruebas           | Pest                                            |
 
 > **Nota de diseño:** el SRS menciona Bootstrap 5 / AdminLTE para la interfaz, pero el diseño de
 > referencia (Stitch) es Tailwind; se priorizó Tailwind para reutilizar las vistas entregadas.
@@ -97,22 +97,47 @@ composer run dev
 
 Tareas programadas registradas (`php artisan schedule:list`):
 
-| Tarea | Frecuencia | Propósito |
-| --- | --- | --- |
-| `close-expired-grace-windows` | cada minuto | Cierra pedidos en gracia vencidos (24 h) |
-| `expire-order-offers` | cada minuto | Respaldo de ofertas vencidas (90 s) |
-| `detect-inactive-drivers` | cada minuto | Marca repartidores inactivos y notifica al dueño |
+| Tarea                         | Frecuencia  | Propósito                                        |
+| ----------------------------- | ----------- | ------------------------------------------------ |
+| `close-expired-grace-windows` | cada minuto | Cierra pedidos en gracia vencidos (24 h)         |
+| `expire-order-offers`         | cada minuto | Respaldo de ofertas vencidas (90 s)              |
+| `detect-inactive-drivers`     | cada minuto | Marca repartidores inactivos y notifica al dueño |
+
+## Identificadores legibles (slug)
+
+Todas las entidades del dominio exponen una columna `slug` (generada automáticamente por el trait
+`app/Models/Traits/HasSlug.php` al crear el registro, con sufijo `-2`, `-3`, … ante colisiones):
+
+| Modelo                                                            | Fuente del slug                                                   | Único por |
+| ----------------------------------------------------------------- | ----------------------------------------------------------------- | --------- |
+| `Business`, `User`                                                | `name`                                                            | global    |
+| `Product`                                                         | `name`                                                            | negocio   |
+| `DeliveryDriver`                                                  | nombre del usuario vinculado                                      | negocio   |
+| `Order`                                                           | `customer_name`                                                   | negocio   |
+| `Package`                                                         | `tracking_code`                                                   | global    |
+| `OrderItem`, `InventoryMovement`, `PackageScan`, `OrderStatusLog` | compuesto descriptivo (p. ej. `item-1-3`, `movimiento-3-reserve`) | global    |
+
+`getRouteKeyName()` devuelve `slug`, así que las URLs de pedidos usan el slug
+(`/negocio/pedidos/maria-camila-rodriguez`); no obstante, el resolver `Order::whereKeyOrSlug()` sigue
+aceptando el id numérico para no romper enlaces antiguos.
+
+Para rellenar los slug de filas creadas antes de la columna (no destructivo e idempotente, solo toca
+`slug = NULL`):
+
+```bash
+php artisan slugs:backfill
+```
 
 ## Credenciales de demostración
 
 Sembradas por `php artisan migrate:fresh --seed`:
 
-| Rol | Usuario | Contraseña | Panel |
-| --- | --- | --- | --- |
-| SuperAdmin | `super@fastlogi.test` | `superadmin` | `/superadmin` |
-| Dueño (Restaurante El Leñador) | `owner@fastlogi.test` | `password123` | `/negocio` |
-| Dueño (Calzado San Victorino) | `calzado@fastlogi.test` | `password123` | `/negocio` |
-| Repartidores | `driver1@fastlogi.test` … `driver6@fastlogi.test` | `driverpass` | `/repartidor/rutas` |
+| Rol                            | Usuario                                           | Contraseña    | Panel               |
+| ------------------------------ | ------------------------------------------------- | ------------- | ------------------- |
+| SuperAdmin                     | `super@fastlogi.test`                             | `superadmin`  | `/superadmin`       |
+| Dueño (Restaurante El Leñador) | `owner@fastlogi.test`                             | `password123` | `/negocio`          |
+| Dueño (Calzado San Victorino)  | `calzado@fastlogi.test`                           | `password123` | `/negocio`          |
+| Repartidores                   | `driver1@fastlogi.test` … `driver6@fastlogi.test` | `driverpass`  | `/repartidor/rutas` |
 
 El login acepta **correo o teléfono**. Ejemplos de teléfono de repartidor: `3101112233` (driver1).
 
@@ -126,9 +151,9 @@ php artisan test
 # Equivalente: vendor/bin/pest
 ```
 
-Cobertura actual: **169 tests, 548 aserciones** (auth/roles, multi-tenant, inventario, pedidos y
-máquina de estados, concurrencia, escaneos, telemetría, dashboard, notificaciones, gestión de flota
-y reportes PDF).
+Cobertura actual: **182 tests, 568 aserciones** (auth/roles, multi-tenant, inventario, pedidos y
+máquina de estados, concurrencia, escaneos, telemetría, dashboard, notificaciones, gestión de flota,
+reportes PDF y slugs).
 
 Formateo de código (solo archivos tocados):
 
@@ -138,21 +163,21 @@ vendor/bin/pint app/Services/NombreServicio.php ...
 
 ## Estructura funcional (mapa RF → archivos)
 
-| RF | Descripción | Archivos principales |
-| --- | --- | --- |
-| RF-001 | Creación de pedidos y reserva de stock | `app/Services/OrderService.php`, `app/Services/InventoryService.php`, `app/Livewire/Owner/Orders.php` |
-| RF-002 | Oferta de pedido y aceptación del repartidor | `app/Services/OrderService.php`, `app/Jobs/ExpireOrderOffer.php`, `app/Notifications/OrderOffered.php`, `app/Notifications/OfferRejectedOrExpired.php`, `app/Livewire/Driver/Routes.php` |
-| RF-003 | Suspensión y reactivación de negocios | `app/Services/BusinessSuspensionService.php`, `app/Jobs/CloseGraceOrders.php`, `app/Livewire/Superadmin/Dashboard.php` |
-| RF-004 | Creación de negocios por el SuperAdmin | `app/Services/BusinessService.php`, `app/Livewire/Superadmin/Dashboard.php` |
-| RF-005 | Disponibilidad y capacidad de repartidores | `app/Services/DriverAvailabilityService.php`, `app/Services/DriverManagementService.php`, `app/Livewire/Owner/Drivers.php` |
-| RF-006 | Trazabilidad de paquetes (timeline) | `app/Services/PackageScanService.php`, `app/Livewire/Driver/OrderDetail.php`, `app/Livewire/Owner/Orders.php`, `app/Livewire/Owner/Dashboard.php` |
-| RF-007 | Aislamiento multi-tenant | `app/Models/Traits/BelongsToBusiness.php`, `app/Models/Scopes/BusinessScope.php` |
-| RF-008 | Inventario y alertas persistentes de stock | `app/Services/InventoryService.php`, `app/Notifications/LowStockAlert.php`, `app/Livewire/Owner/Inventory.php` |
-| RF-009 | Reportes en PDF | `app/Services/ReportService.php`, `app/Http/Controllers/Owner/ReportController.php`, `resources/views/reports/*`, `app/Livewire/Owner/Reports.php` |
-| RF-010 | Autenticación y roles | `app/Http/Controllers/Auth/LoginController.php`, `app/Http/Middleware/RoleMiddleware.php` |
-| RF-011 | Ubicación GPS e inactividad del repartidor | `app/Services/DriverTelemetryService.php`, `app/Jobs/DetectInactiveDrivers.php`, `app/Http/Controllers/Driver/DriverTelemetryController.php` |
-| Centro de notificaciones | Campana + centro persistente | `app/Livewire/Owner/NotificationBell.php`, `app/Livewire/Owner/Notifications.php`, `app/Support/NotificationPresenter.php` |
-| Dashboard del dueño | KPIs, flota y timeline | `app/Livewire/Owner/Dashboard.php` |
+| RF                       | Descripción                                  | Archivos principales                                                                                                                                                                     |
+| ------------------------ | -------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| RF-001                   | Creación de pedidos y reserva de stock       | `app/Services/OrderService.php`, `app/Services/InventoryService.php`, `app/Livewire/Owner/Orders.php`                                                                                    |
+| RF-002                   | Oferta de pedido y aceptación del repartidor | `app/Services/OrderService.php`, `app/Jobs/ExpireOrderOffer.php`, `app/Notifications/OrderOffered.php`, `app/Notifications/OfferRejectedOrExpired.php`, `app/Livewire/Driver/Routes.php` |
+| RF-003                   | Suspensión y reactivación de negocios        | `app/Services/BusinessSuspensionService.php`, `app/Jobs/CloseGraceOrders.php`, `app/Livewire/Superadmin/Dashboard.php`                                                                   |
+| RF-004                   | Creación de negocios por el SuperAdmin       | `app/Services/BusinessService.php`, `app/Livewire/Superadmin/Dashboard.php`                                                                                                              |
+| RF-005                   | Disponibilidad y capacidad de repartidores   | `app/Services/DriverAvailabilityService.php`, `app/Services/DriverManagementService.php`, `app/Livewire/Owner/Drivers.php`                                                               |
+| RF-006                   | Trazabilidad de paquetes (timeline)          | `app/Services/PackageScanService.php`, `app/Livewire/Driver/OrderDetail.php`, `app/Livewire/Owner/Orders.php`, `app/Livewire/Owner/Dashboard.php`                                        |
+| RF-007                   | Aislamiento multi-tenant                     | `app/Models/Traits/BelongsToBusiness.php`, `app/Models/Scopes/BusinessScope.php`                                                                                                         |
+| RF-008                   | Inventario y alertas persistentes de stock   | `app/Services/InventoryService.php`, `app/Notifications/LowStockAlert.php`, `app/Livewire/Owner/Inventory.php`                                                                           |
+| RF-009                   | Reportes en PDF                              | `app/Services/ReportService.php`, `app/Http/Controllers/Owner/ReportController.php`, `resources/views/reports/*`, `app/Livewire/Owner/Reports.php`                                       |
+| RF-010                   | Autenticación y roles                        | `app/Http/Controllers/Auth/LoginController.php`, `app/Http/Middleware/RoleMiddleware.php`                                                                                                |
+| RF-011                   | Ubicación GPS e inactividad del repartidor   | `app/Services/DriverTelemetryService.php`, `app/Jobs/DetectInactiveDrivers.php`, `app/Http/Controllers/Driver/DriverTelemetryController.php`                                             |
+| Centro de notificaciones | Campana + centro persistente                 | `app/Livewire/Owner/NotificationBell.php`, `app/Livewire/Owner/Notifications.php`, `app/Support/NotificationPresenter.php`                                                               |
+| Dashboard del dueño      | KPIs, flota y timeline                       | `app/Livewire/Owner/Dashboard.php`                                                                                                                                                       |
 
 ## Alcance
 

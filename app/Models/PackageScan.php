@@ -3,15 +3,17 @@
 namespace App\Models;
 
 use App\Enums\PackageScanType;
+use App\Models\Traits\HasSlug;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class PackageScan extends Model
 {
-    use HasFactory;
+    use HasFactory, HasSlug;
 
     protected $fillable = [
+        'slug',
         'package_id',
         'type',
         'user_id',
@@ -26,6 +28,19 @@ class PackageScan extends Model
         'longitude' => 'float',
         'scanned_at' => 'datetime',
     ];
+
+    /**
+     * Scans have no name: the slug describes package and scan type.
+     */
+    protected function slugSource(): ?string
+    {
+        return null;
+    }
+
+    protected function slugSourceValue(): string
+    {
+        return 'escaneo '.$this->package_id.' '.self::stringifySlugValue($this->type);
+    }
 
     public function package(): BelongsTo
     {

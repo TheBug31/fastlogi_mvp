@@ -1,6 +1,4 @@
 <div class="space-y-6" wire:poll.15s>
-    <x-ui.toast />
-
     @error('offer')
         <x-ui.alert type="error">{{ $message }}</x-ui.alert>
     @enderror
@@ -49,7 +47,7 @@
                         <div class="flex items-start justify-between gap-4">
                             <div class="min-w-0">
                                 <p class="text-xs font-medium text-slate-500">{{ $orderLabel($offer) }}</p>
-                                <p class="mt-0.5 truncate text-lg font-semibold text-slate-900">{{ $offer->customer_name }}</p>
+                                <p class="mt-0.5 whitespace-normal break-words text-lg font-semibold text-slate-900">{{ $offer->customer_name }}</p>
                             </div>
 
                             @if ($offer->offer_expires_at)
@@ -115,8 +113,8 @@
                        wire:key="active-{{ $order->id }}">
                         <div class="min-w-0">
                             <p class="text-xs font-medium text-slate-500">{{ $orderLabel($order) }}</p>
-                            <p class="mt-0.5 truncate font-semibold text-slate-900">{{ $order->customer_name }}</p>
-                            <p class="mt-0.5 truncate text-sm text-slate-500">{{ $order->delivery_address }}</p>
+                                <p class="mt-0.5 whitespace-normal break-words font-semibold text-slate-900">{{ $order->customer_name }}</p>
+                                <p class="mt-0.5 whitespace-normal break-words text-sm text-slate-500">{{ $order->delivery_address }}</p>
                             <div class="mt-2">
                                 <x-ui.status-badge :status="$order->status" />
                             </div>

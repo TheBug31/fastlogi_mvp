@@ -1,4 +1,4 @@
-﻿<div class="space-y-6">
+<div class="space-y-6">
     <x-ui.page-header title="Reportes" description="Genera reportes de pedidos y repartidores en PDF con filtros." />
 
     <x-ui.card>
@@ -70,7 +70,29 @@
                 <span class="text-xs text-slate-500">Primeros 10 registros</span>
             </div>
 
-            <div class="overflow-x-auto">
+            <div class="divide-y divide-slate-200 lg:hidden">
+                @forelse ($orders->take(10) as $order)
+                    <a wire:key="report-order-card-{{ $order->id }}" href="{{ route('owner.orders.show', $order) }}" wire:navigate
+                       class="block space-y-3 p-4 transition-colors hover:bg-slate-50">
+                        <div class="flex items-center justify-between gap-3">
+                            <span class="font-semibold text-teal-700">#{{ str_pad((string) $order->id, 4, '0', STR_PAD_LEFT) }}</span>
+                            <x-ui.status-badge :status="$order->status" />
+                        </div>
+                        <div>
+                            <p class="font-medium text-slate-900">{{ $order->customer_name }}</p>
+                            <p class="mt-0.5 text-xs text-slate-500">{{ format_datetime($order->created_at) }}</p>
+                        </div>
+                        <div class="flex items-center justify-between gap-3 border-t border-slate-100 pt-3 text-sm">
+                            <span class="text-slate-600">{{ $order->deliveryDriver?->user?->name ?? 'Sin asignar' }}</span>
+                            <span class="font-semibold tabular-nums text-slate-900">{{ format_cop($order->total) }}</span>
+                        </div>
+                    </a>
+                @empty
+                    <p class="px-4 py-10 text-center text-sm text-slate-500">No hay pedidos para los filtros seleccionados.</p>
+                @endforelse
+            </div>
+
+            <div class="hidden overflow-x-auto lg:block">
                 <table class="min-w-full divide-y divide-slate-200">
                     <thead class="border-b border-slate-200 bg-slate-50">
                         <tr>

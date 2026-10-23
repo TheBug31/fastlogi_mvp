@@ -3,5 +3,5 @@
 @section('title', 'Detalle de entrega')
 
 @section('content')
-    <livewire:driver.order-detail :order-id="(int) request()->route('order')" />
+    <livewire:driver.order-detail :order-id="request()->route('order') ?? ''" />
 @endsection

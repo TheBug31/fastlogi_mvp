@@ -5,12 +5,24 @@
 ])
 
 @php
-    $classes = $attributes->get('class');
+    $classes = (string) $attributes->get('class', '');
 
-    // h-5/w-5 = 20 px por defecto (guía §2); el llamador puede sobreescribir con su propia class.
-    if ($classes === null || trim($classes) === '') {
-        $classes = 'h-'.$size.' w-'.$size;
+    // Si el llamador no especificó altura/ancho o size explícito, aplicar por defecto h-{$size} w-{$size}
+    $hasHeight = preg_match('/\bh-\S+/', $classes);
+    $hasWidth = preg_match('/\bw-\S+/', $classes);
+    $hasSize = preg_match('/\bsize-\S+/', $classes);
+
+    $defaultSize = '';
+    if (! $hasSize) {
+        if (! $hasHeight) {
+            $defaultSize .= 'h-'.$size.' ';
+        }
+        if (! $hasWidth) {
+            $defaultSize .= 'w-'.$size.' ';
+        }
     }
+
+    $classes = trim($defaultSize . $classes);
 
     // Cualquier otro atributo del llamador (x-show, wire:loading, data-*, title…) viaja al <svg>.
     $svgAttributes = $attributes->getAttributes();

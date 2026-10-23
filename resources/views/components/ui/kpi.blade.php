@@ -13,7 +13,7 @@
     };
 @endphp
 
-<div {{ $attributes->merge(['class' => 'rounded-xl border border-slate-200 bg-white shadow-sm p-6']) }}>
+<div {{ $attributes->merge(['class' => 'rounded-xl border border-slate-200 bg-white p-4 shadow-sm sm:p-6']) }}>
     <div class="flex items-start justify-between gap-4">
         <div class="min-w-0">
             <p class="text-xs font-medium text-slate-500">{{ $label }}</p>

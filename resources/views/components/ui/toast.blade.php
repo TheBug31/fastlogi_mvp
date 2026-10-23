@@ -16,17 +16,16 @@
     $entry = $iconMap[$type] ?? $iconMap['success'];
 @endphp
 
-@if ($text)
-    <div
+<div
         x-data="{
-            visible: true,
+            visible: Boolean(@js($text)),
             text: @js($text),
             hideAfter() {
                 clearTimeout(this._t);
                 this._t = setTimeout(() => { this.visible = false; }, 4000);
             },
             init() {
-                this.hideAfter();
+                if (this.visible) this.hideAfter();
                 this._onToast = (e) => {
                     const message = e.detail?.message ?? e.detail;
                     if (typeof message === 'string' && message) this.text = message;
@@ -50,9 +49,9 @@
         x-cloak
         role="status"
         aria-live="polite"
-        class="fixed right-8 top-5 z-[60] flex items-center gap-3 rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm font-medium text-slate-800 shadow-lg"
+        class="fixed inset-x-3 top-3 z-[60] flex items-center gap-3 rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm font-medium text-slate-800 shadow-lg sm:inset-x-auto sm:right-5 sm:top-5 sm:max-w-md"
     >
-        <x-icon :name="$entry['name']" class="{{ $entry['class'] }}" />
+        <x-icon :name="$entry['name']" class="h-5 w-5 shrink-0 {{ $entry['class'] }}" />
         <span x-text="text">{{ $text }}</span>
         <button
             type="button"
@@ -63,4 +62,3 @@
             <x-icon name="x-mark" class="h-4 w-4" />
         </button>
     </div>
-@endif

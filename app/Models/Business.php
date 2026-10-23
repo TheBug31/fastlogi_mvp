@@ -4,16 +4,18 @@ namespace App\Models;
 
 use App\Enums\BusinessStatus;
 use App\Enums\OrderStatus;
+use App\Models\Traits\HasSlug;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class Business extends Model
 {
-    use HasFactory;
+    use HasFactory, HasSlug;
 
     protected $fillable = [
         'name',
+        'slug',
         'address',
         'phone',
         'status',

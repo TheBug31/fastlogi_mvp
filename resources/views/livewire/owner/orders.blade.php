@@ -1,6 +1,4 @@
 <div class="space-y-6">
-    <x-ui.toast />
-
     @error('devolution')
         <x-ui.alert type="error">{{ $message }}</x-ui.alert>
     @enderror
@@ -50,8 +48,8 @@
         </x-ui.empty-state>
     @else
         <x-ui.card padding="none">
-            <div class="px-6 pt-5">
-                <x-ui.tabs>
+            <div class="px-4 pt-4 sm:px-6 sm:pt-5">
+                <x-ui.tabs aria-label="Filtrar pedidos por estado">
                     <x-ui.tab :active="$statusFilter === 'todos'" :count="$totalOrders"
                               wire:click="$set('statusFilter', 'todos')">Todos</x-ui.tab>
                     <x-ui.tab :active="$statusFilter === \App\Enums\OrderStatus::Pending->value"
@@ -80,7 +78,7 @@
                     <span class="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3 text-slate-400" aria-hidden="true">
                         <x-icon name="magnifying-glass" />
                     </span>
-                    <input type="search" wire:model.live.debounce.400ms="search"
+                    <input type="search" wire:model.live.debounce.250ms="search"
                            aria-label="Buscar por cliente, teléfono o número de pedido"
                            placeholder="Buscar por cliente, teléfono o número de pedido…"
                            class="h-10 w-full rounded-lg border border-slate-300 bg-white pl-10 pr-3.5 text-sm text-slate-900 placeholder:text-slate-400 focus:border-teal-600 focus:outline-none focus:ring-2 focus:ring-teal-600/20"/>
@@ -91,7 +89,55 @@
                 </p>
             </div>
 
-            <div class="overflow-x-auto">
+            <div class="divide-y divide-slate-200 lg:hidden">
+                @forelse ($orders as $order)
+                    <article wire:key="order-card-{{ $order->id }}" class="space-y-3 p-4 {{ $order->status === \App\Enums\OrderStatus::Incident ? 'bg-red-50/40' : 'bg-white' }}">
+                        <div class="flex items-start justify-between gap-3">
+                            <div class="min-w-0">
+                                <a href="{{ route('owner.orders.show', $order) }}" wire:navigate class="font-semibold tabular-nums text-teal-700 hover:underline">{{ $orderLabel($order) }}</a>
+                                <p class="mt-0.5 text-xs text-slate-500">{{ format_datetime($order->created_at) }}</p>
+                            </div>
+                            <x-ui.status-badge :status="$order->status" />
+                        </div>
+                        <div class="space-y-1 text-sm">
+                            <p class="font-medium text-slate-900">{{ $order->customer_name }} <span class="font-normal tabular-nums text-slate-500">· {{ $order->customer_phone }}</span></p>
+                            <p class="break-words text-slate-600">{{ $order->delivery_address }}</p>
+                            <p class="text-xs text-slate-500">{{ $order->deliveryDriver?->user?->name ?? 'Sin asignar' }}</p>
+                        </div>
+                        <div class="flex items-center justify-between gap-3 border-t border-slate-100 pt-3">
+                            <div>
+                                <p class="font-semibold tabular-nums text-slate-900">{{ format_cop($order->total) }}</p>
+                                <p class="text-xs text-slate-500">{{ $order->payment_method }}</p>
+                            </div>
+                            <div class="flex flex-wrap justify-end gap-2">
+                                @switch($order->status)
+                                    @case(\App\Enums\OrderStatus::Pending)
+                                        <x-ui.button size="sm" type="button" wire:click="openOfferModal({{ $order->id }})">Ofrecer</x-ui.button>
+                                        @break
+                                    @case(\App\Enums\OrderStatus::Offered)
+                                        <x-ui.button variant="secondary" size="sm" type="button" wire:click="openReassignModal({{ $order->id }})">Retirar</x-ui.button>
+                                        @break
+                                    @case(\App\Enums\OrderStatus::Assigned)
+                                    @case(\App\Enums\OrderStatus::InTransit)
+                                    @case(\App\Enums\OrderStatus::Delivered)
+                                        <x-ui.button variant="secondary" size="sm" type="button" wire:click="openDetailModal({{ $order->id }})">Ver detalle</x-ui.button>
+                                        @break
+                                    @case(\App\Enums\OrderStatus::Incident)
+                                        <x-ui.button size="sm" type="button" wire:click="confirmDevolution({{ $order->id }})" wire:confirm="¿Confirmas la recepción del paquete devuelto? Se reintegrará el stock.">Confirmar devolución</x-ui.button>
+                                        @break
+                                    @case(\App\Enums\OrderStatus::Cancelled)
+                                        <span class="max-w-40 text-right text-xs italic text-slate-500">{{ $order->cancel_reason ?: 'Cancelado' }}</span>
+                                        @break
+                                @endswitch
+                            </div>
+                        </div>
+                    </article>
+                @empty
+                    <p class="px-4 py-10 text-center text-sm text-slate-500">No hay pedidos que coincidan con los filtros.</p>
+                @endforelse
+            </div>
+
+            <div class="hidden overflow-x-auto lg:block">
                 <table class="min-w-full divide-y divide-slate-200">
                     <thead class="border-b border-slate-200 bg-slate-50">
                         <tr>
@@ -120,7 +166,7 @@
                                 </x-ui.table.td>
 
                                 <x-ui.table.td>
-                                    <p class="max-w-[240px] text-slate-700">{{ $order->delivery_address }}</p>
+                                    <p class="max-w-[240px] whitespace-normal break-words text-slate-700">{{ $order->delivery_address }}</p>
                                 </x-ui.table.td>
 
                                 <x-ui.table.td align="right">
@@ -144,7 +190,7 @@
                                 </x-ui.table.td>
 
                                 <x-ui.table.td align="right">
-                                    <div class="flex items-center justify-end gap-2">
+                                    <div class="flex flex-wrap items-center justify-end gap-2">
                                         @switch($order->status)
                                             @case(\App\Enums\OrderStatus::Pending)
                                                 <x-ui.button size="sm" wire:click="openOfferModal({{ $order->id }})">Ofrecer</x-ui.button>
@@ -219,9 +265,9 @@
                     </div>
 
                     <x-ui.select name="payment_method" label="Método de pago" required wire:model="payment_method">
-                        <option>Contra Entrega (Efectivo)</option>
-                        <option>Nequi / Daviplata</option>
-                        <option>Transferencia Bancaria</option>
+                        <option value="Efectivo">Efectivo</option>
+                        <option value="Transferencia">Transferencia</option>
+                        <option value="Tarjeta">Tarjeta</option>
                     </x-ui.select>
 
                     <div class="flex items-end pb-2.5">
